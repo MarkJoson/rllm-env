@@ -1,0 +1,1 @@
+docker build -t ascend-cann900-dev:framework --add-host=host.docker.internal:host-gateway .

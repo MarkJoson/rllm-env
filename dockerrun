@@ -1,0 +1,103 @@
+docker run -it \
+  --name ascend-verl \
+  --net=host \
+  --ipc=host \
+  --shm-size=768g \
+  --device=/dev/davinci0 \
+  --device=/dev/davinci1 \
+  --device=/dev/davinci2 \
+  --device=/dev/davinci3 \
+  --device=/dev/davinci4 \
+  --device=/dev/davinci5 \
+  --device=/dev/davinci6 \
+  --device=/dev/davinci7 \
+  --device=/dev/davinci8 \
+  --device=/dev/davinci9 \
+  --device=/dev/davinci10 \
+  --device=/dev/davinci11 \
+  --device=/dev/davinci12 \
+  --device=/dev/davinci13 \
+  --device=/dev/davinci14 \
+  --device=/dev/davinci15 \
+  --device=/dev/davinci_manager \
+  --device=/dev/devmm_svm \
+  --device=/dev/hisi_hdc \
+  -v /home/g00841271:/home/g00841271 \
+  -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
+  -v /mnt/pipeline-data:/mnt/pipeline-data \
+  -v /usr/local/dcmi:/usr/local/dcmi:ro \
+  -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi:ro \
+  -v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/ \
+  -v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  ascend-cann900-dev:framework bash
+
+------------------------------------------------------------
+
+docker run -it \
+  --name pastenv_validate \
+  --net=host \
+  --ipc=host \
+  --shm-size=768g \
+  --device=/dev/davinci0 \
+  --device=/dev/davinci1 \
+  --device=/dev/davinci2 \
+  --device=/dev/davinci3 \
+  --device=/dev/davinci4 \
+  --device=/dev/davinci5 \
+  --device=/dev/davinci6 \
+  --device=/dev/davinci7 \
+  --device=/dev/davinci8 \
+  --device=/dev/davinci9 \
+  --device=/dev/davinci10 \
+  --device=/dev/davinci11 \
+  --device=/dev/davinci12 \
+  --device=/dev/davinci13 \
+  --device=/dev/davinci14 \
+  --device=/dev/davinci15 \
+  --device=/dev/davinci_manager \
+  --device=/dev/devmm_svm \
+  --device=/dev/hisi_hdc \
+  -v /home/g00841271:/home/g00841271 \
+  -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
+  -v /mnt/pipeline-data:/mnt/pipeline-data \
+  -v /usr/local/dcmi:/usr/local/dcmi:ro \
+  -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi:ro \
+  -v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/ \
+  -v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  rllm_cbx_base:v1.0 bash
+
+------------------------------------------------------------
+
+docker run -it \
+  --name pastenv_validate \
+  --net=host \
+  --ipc=host \
+  --shm-size=768g \
+  --privileged \
+  --device=/dev/davinci1 \
+  --device=/dev/davinci2 \
+  --device=/dev/davinci3 \
+  --device=/dev/davinci4 \
+  --device=/dev/davinci5 \
+  --device=/dev/davinci6 \
+  --device=/dev/davinci7 \
+  --device=/dev/davinci8 \
+  --device=/dev/davinci9 \
+  --device=/dev/davinci10 \
+  --device=/dev/davinci11 \
+  --device=/dev/davinci12 \
+  --device=/dev/davinci13 \
+  --device=/dev/davinci14 \
+  --device=/dev/davinci15 \
+  --device=/dev/davinci_manager \
+  --device=/dev/devmm_svm \
+  --device=/dev/hisi_hdc \
+  -v /home/g00841271_v2:/home/g00841271 \
+  -v /mnt/pipeline-data:/mnt/pipeline-data \
+  -v /usr/local/dcmi:/usr/local/dcmi:ro \
+  -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi:ro \
+  -v /usr/local/Ascend/driver:/usr/local/Ascend/driver \
+  -v /usr/local/Ascend/firmware:/usr/local/Ascend/firmware \
+  rllm_cbx_base:v1.0 bash
