@@ -224,10 +224,19 @@ RUN grep -q "force_color_prompt=yes" /root/.bashrc || echo 'force_color_prompt=y
     echo 'export PS1='\''${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\[\033[01;31m\]\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '\''' >> /root/.bashrc
 
 # 配置 HCCL 以及相关工具
+# ENV HCCL_SOCKET_IFNAME=ens1f3
+# ENV GLOO_SOCKET_IFNAME=ens1f3
+ENV HCCL_IF_BASE_PORT=50000
+ENV HCCL_HOST_SOCKET_PORT_RANGE=60000-60050
+ENV HCCL_NPU_SOCKET_PORT_RANGE=61000-61050
 ENV HCCL_SOCKET_FAMILY=AF_INET
-ENV HCCL_SOCKET_IFNAME=eth,enp,ens,end
+ENV HCCL_INTRA_ROCE_ENABLE=1
+ENV HCCL_INTRA_PCIE_ENABLE=0
+ENV HCCL_SOCKET_IFNAME=ens
 ENV HCCL_CONNECT_TIMEOUT=600
-ENV HCCL_BUFFSIZE=2048
+ENV HCCL_BUFFSIZE=512
+ENV HCCL_WHITELIST_DISABLE=1
+ENV HCCL_OP_EXPANSION_MODE=AIV
 
 RUN export INSTALL_DIR=/usr/local/Ascend/ascend-toolkit/latest \
     && source /etc/profile.d/ascend-cann.sh \

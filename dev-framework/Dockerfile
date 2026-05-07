@@ -57,6 +57,7 @@ RUN export http_proxy=http://host.docker.internal:18080 \
 
 # 17) 安装 rllm（本地源码）
 COPY pkgs/rllm-071 /workspace/rllm-071
+ENV GIT_SSL_NO_VERIFY=1
 RUN export http_proxy=http://host.docker.internal:18080 \
     && export https_proxy=http://host.docker.internal:18080 \
     && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
@@ -69,10 +70,14 @@ RUN export http_proxy=http://host.docker.internal:18080 \
 # 18) 安装 kernelGym-NPU
 COPY pkgs/kernelGym-npu-main/ /workspace/kernelGym-npu-main
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends redis \
-    && rm -rf /var/lib/apt/lists/* \
-RUN cd /workspace/rllm-071 \
-    && python -m pip install -v -e . --no-build-isolation \
+    && apt-get install -y --no-install-recommends redis postgresql-client-common \
+    && rm -rf /var/lib/apt/lists/*
+RUN export http_proxy=http://host.docker.internal:18080 \
+    && export https_proxy=http://host.docker.internal:18080 \
+    && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
+    && cd /workspace/kernelGym-npu-main \
+    && python -m pip uninstall triton triton-ascend -y \
+    && python -m pip install -v triton-ascend debugpy asyncpg --no-build-isolation \
         -i https://download-r2.pytorch.org/whl/cpu --extra-index-url https://mirrors.tools.huawei.com/pypi/simple --trusted-host=download-r2.pytorch.org
 
 
