@@ -28,7 +28,6 @@ RUN export http_proxy=http://host.docker.internal:18080 \
     && export https_proxy=http://host.docker.internal:18080 \
     && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
     && source /etc/profile.d/ascend-cann.sh \
-    && test -f /usr/local/Ascend/nnal/atb/set_env.sh \
     && python -m pip install nanobind "cmake==3.28.4" \
     && python -m pip install -r /workspace/vllm-ascend/requirements.txt --no-build-isolation \
         -i https://download-r2.pytorch.org/whl/cpu --extra-index-url https://mirrors.tools.huawei.com/pypi/simple --trusted-host=download-r2.pytorch.org \
@@ -70,7 +69,7 @@ RUN export http_proxy=http://host.docker.internal:18080 \
 # 18) 安装 kernelGym-NPU
 COPY pkgs/kernelGym-npu-main/ /workspace/kernelGym-npu-main
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends redis postgresql-client-common \
+    && apt-get install -y --no-install-recommends redis postgresql-client-common numactl libnuma-dev libjemalloc \
     && rm -rf /var/lib/apt/lists/*
 RUN export http_proxy=http://host.docker.internal:18080 \
     && export https_proxy=http://host.docker.internal:18080 \

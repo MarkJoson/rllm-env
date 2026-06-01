@@ -160,15 +160,15 @@ ENV PIP_ROOT_USER_ACTION=ignore
 RUN echo '[global]' > /etc/pip.conf && \
     echo 'index-url = https://mirrors.tools.huawei.com/pypi/simple' >> /etc/pip.conf && \
     echo 'trusted-host = mirrors.tools.huawei.com' >> /etc/pip.conf && \
-    echo 'timeout = 120' >> /etc/pip.conf
+    echo 'verify = false' >> /etc/pip.conf && \
+    echo 'timeout = 120' >> /etc/pip.conf \
+    && python3.11 -m pip install pip setuptools==80.0.0 wheel
 
-COPY cann /workspace/cann/
-RUN python3.11 -m pip install pip setuptools==80.0.0 wheel 
-RUN /workspace/cann/Ascend-cann-toolkit_9.0.0_linux-x86_64.run --install --quiet --install-for-all \
+COPY cann /tmp/
+RUN bash /tmp/Ascend-cann_9.0.0_linux-x86_64.run --install --quiet --install-for-all \
     && source /usr/local/Ascend/cann/set_env.sh \
-    && /workspace/cann/Ascend-cann-910b-ops_9.0.0_linux-x86_64.run --install --quiet --install-for-all \
-    && /workspace/cann/Ascend-cann-nnal_9.0.0_linux-x86_64.run --install --quiet --install-for-all
-
+    && bash /tmp/Ascend-cann-910b-ops_9.0.0_linux-x86_64.run --install --quiet --install-for-all \
+    && rm -r /tmp/Ascend*
 
 RUN echo 'if [ -f /usr/local/Ascend/cann/set_env.sh ]; then' > /etc/profile.d/ascend-cann.sh && \
     echo '  source /usr/local/Ascend/cann/set_env.sh' >> /etc/profile.d/ascend-cann.sh && \
@@ -177,30 +177,32 @@ RUN echo 'if [ -f /usr/local/Ascend/cann/set_env.sh ]; then' > /etc/profile.d/as
     echo 'elif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then' >> /etc/profile.d/ascend-cann.sh && \
     echo '  source /usr/local/Ascend/ascend-toolkit/latest/set_env.sh' >> /etc/profile.d/ascend-cann.sh && \
     echo 'fi' >> /etc/profile.d/ascend-cann.sh && \
-    echo '' >> /etc/profile.d/ascend-cann.sh && \
-    echo 'if [ -f /usr/local/Ascend/nnal/atb/set_env.sh ]; then' >> /etc/profile.d/ascend-cann.sh && \
-    echo '  source /usr/local/Ascend/nnal/atb/set_env.sh' >> /etc/profile.d/ascend-cann.sh && \
-    echo 'fi' >> /etc/profile.d/ascend-cann.sh
+    echo '' >> /etc/profile.d/ascend-cann.sh
 
 
 RUN export http_proxy=http://host.docker.internal:18080 \
     && export https_proxy=http://host.docker.internal:18080 \
     && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
+    && export CURL_CA_BUNDLE="" \
+    && export SSL_CERT_FILE="" \
+    && echo "insecure" > ~/.curlrc \
+    && echo "check_certificate = off" > ~/.wgetrc \
     && bash -c "curl -LsSfk https://astral.sh/uv/install.sh | sh"
 
-
-COPY pips /tmp/
-
+# COPY pips /tmp/
 RUN export http_proxy=http://host.docker.internal:18080 \
     && export https_proxy=http://host.docker.internal:18080 \
     && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
     && python -m pip install \
-        "/tmp/torch-2.8.0+cpu-cp311-cp311-manylinux_2_28_x86_64.whl" \
-        "/tmp/torch_npu-2.8.0.post4.dev20260309-cp311-cp311-manylinux_2_28_x86_64.whl" \
-        "/tmp/torchvision-0.23.0+cpu-cp311-cp311-manylinux_2_28_x86_64.whl" \
-        "/tmp/triton_ascend-3.4.0.dev2026012922-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl" \
+        torch==2.10 torch_npu==2.10 triton-ascend==3.2.1 \
         setuptools==80.0.0 \
-        -i https://download.pytorch.org/whl/cpu --extra-index-url https://mirrors.tools.huawei.com/pypi/simple
+        -i https://download.pytorch.org/whl/cpu \
+        --extra-index-url=https://mirrors.tools.huawei.com/pypi/simple \
+        --extra-index-url=https://triton-ascend.osinfra.cn/pypi/simple \
+        --trusted-host=download.pytorch.org \
+        --trusted-host=download-r2.pytorch.org \
+        --trusted-host=triton-ascend.osinfra.cn \
+        --trusted-host=mirrors.tools.huawei.com
 
 # 安装 MPI
 RUN export http_proxy=http://host.docker.internal:18080 \
