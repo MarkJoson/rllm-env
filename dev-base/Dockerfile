@@ -6,228 +6,298 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+# 代理参数
+ARG HTTP_PROXY=http://host.docker.internal:18080
+ARG HTTPS_PROXY=http://host.docker.internal:18080
+ARG NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com,mirrors.tuna.tsinghua.edu.cn,pypi.tuna.tsinghua.edu.cn,download.pytorch.org,download-r2.pytorch.org,triton-ascend.osinfra.cn
+
+ARG DEBIAN_MIRROR_HOST=mirrors.tuna.tsinghua.edu.cn
+ARG APT_DIRECT_HOSTS="mirrors.tools.huawei.com"
+ARG APT_INSECURE=1
+
+# Docker CE apt 源
+# 清华源：
+#   https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian
+#   https://download.docker.com/linux/debian
+ARG DOCKER_APT_BASE=https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian
+
+# PyPI 源
+#   https://pypi.tuna.tsinghua.edu.cn/simple
+#   https://mirrors.tools.huawei.com/pypi/simple
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
+
+ARG CANN_ARCH=x86_64
+ARG CANN_CHIP=910b
+ARG CANN_VERSION=9.0.0
+ARG CANN_NNAL_RUNFILE=
+
+# Python 依赖版本
+ARG SETUPTOOLS_VERSION=80.0.0
+ARG TORCH_VERSION=2.10
+ARG TORCH_NPU_VERSION=2.10
+ARG TRITON_ASCEND_VERSION=3.2.1
+
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    DOCKER_HOST=unix:///var/run/docker.sock
+    PIP_ROOT_USER_ACTION=ignore \
+    DOCKER_HOST=unix:///var/run/docker.sock \
+    http_proxy=${HTTP_PROXY} \
+    https_proxy=${HTTPS_PROXY} \
+    no_proxy=${NO_PROXY} \
+    HTTP_PROXY=${HTTP_PROXY} \
+    HTTPS_PROXY=${HTTPS_PROXY} \
+    NO_PROXY=${NO_PROXY}
 
 WORKDIR /workspace
 
-RUN sed -i 's/deb.debian.org/mirrors.tools.huawei.com/g' /etc/apt/sources.list \
-    || sed -i "s@http://security.debian.org@https://mirrors.tools.huawei.com@g" /etc/apt/sources.list || \
-    cat /etc/apt/sources.list || true
+RUN set -eux; \
+    if [ -f /etc/apt/sources.list ]; then \
+        sed -i "s@deb.debian.org@${DEBIAN_MIRROR_HOST}@g" /etc/apt/sources.list; \
+        sed -i "s@security.debian.org@${DEBIAN_MIRROR_HOST}@g" /etc/apt/sources.list; \
+    fi; \
+    if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i "s@deb.debian.org@${DEBIAN_MIRROR_HOST}@g" /etc/apt/sources.list.d/debian.sources; \
+        sed -i "s@security.debian.org@${DEBIAN_MIRROR_HOST}@g" /etc/apt/sources.list.d/debian.sources; \
+    fi; \
+    true
 
-# RUN . /etc/os-release \
-#     && CODENAME="${UBUNTU_CODENAME:-$VERSION_CODENAME}" \
-#     && rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources || true \
-#     && truncate -s 0 /etc/apt/sources.list 2>/dev/null || true \
-#     && printf '%s\n' \
-#         "deb https://mirrors.tools.huawei.com/debian/ ${CODENAME} main contrib non-free non-free-firmware" \
-#         "deb https://mirrors.tools.huawei.com/debian/ ${CODENAME}-updates main contrib non-free non-free-firmware" \
-#         "deb https://mirrors.tools.huawei.com/debian/ ${CODENAME}-backports main contrib non-free non-free-firmware" \
-#         "deb https://mirrors.tools.huawei.com/debian/ ${CODENAME}-security main contrib non-free non-free-firmware" \
-#         > /etc/apt/sources.list
+RUN set -eux; \
+    mkdir -p /etc/apt/apt.conf.d; \
+    : > /etc/apt/apt.conf.d/99proxy; \
+    if [ -n "${HTTP_PROXY}" ]; then \
+        printf 'Acquire::http::Proxy "%s";\n' "${HTTP_PROXY}" >> /etc/apt/apt.conf.d/99proxy; \
+    fi; \
+    if [ -n "${HTTPS_PROXY}" ]; then \
+        printf 'Acquire::https::Proxy "%s";\n' "${HTTPS_PROXY}" >> /etc/apt/apt.conf.d/99proxy; \
+    fi; \
+    for host in ${APT_DIRECT_HOSTS}; do \
+        printf 'Acquire::http::Proxy::%s "DIRECT";\n' "${host}" >> /etc/apt/apt.conf.d/99proxy; \
+        printf 'Acquire::https::Proxy::%s "DIRECT";\n' "${host}" >> /etc/apt/apt.conf.d/99proxy; \
+    done; \
+    if [ "${APT_INSECURE}" = "1" ]; then \
+        printf '%s\n' \
+            'Acquire::https::Verify-Peer "false";' \
+            'Acquire::https::Verify-Host "false";' \
+            >> /etc/apt/apt.conf.d/99proxy; \
+    fi; \
+    cat /etc/apt/apt.conf.d/99proxy
 
-RUN printf '%s\n' \
-    'Acquire::http::Proxy "http://host.docker.internal:18080";' \
-    'Acquire::https::Proxy "http://host.docker.internal:18080";' \
-    'Acquire::http::Proxy::mirrors.tools.huawei.com "DIRECT";' \
-    'Acquire::https::Proxy::mirrors.tools.huawei.com "DIRECT";' \
-    'Acquire::https::Verify-Peer "false";' \
-    'Acquire::https::Verify-Host "false";' \
-    > /etc/apt/apt.conf
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    sudo \
-    nano \
-    vim \
-    less \
-    tree \
-    tmux \
-    jq \
-    curl \
-    wget \
-    unzip \
-    locales \
-    zip \
-    tar \
-    patch \
-    dos2unix \
-    rsync \
-    openssh-server \
-    software-properties-common \
-    procps \
-    psmisc \
-    lsof \
-    strace \
-    gdb \
-    file \
-    git \
-    git-lfs \
-    net-tools \
-    iproute2 \
-    iputils-ping \
-    iputils-arping \
-    iputils-tracepath \
-    netcat-openbsd \
-    iperf3 \
-    htop \
-    nload \
-    pciutils \
-    dnsutils \
-    telnet \
-    build-essential \
-    gcc \
-    g++ \
-    g++-x86-64-linux-gnu \
-    make \
-    cmake \
-    ninja-build \
-    nasm \
-    gawk \
-    bison \
-    pkg-config \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-venv \
-    python-is-python3 \
-    libssl-dev \
-    libffi-dev \
-    zlib1g \
-    zlib1g-dev \
-    libbz2-dev \
-    libsqlite3-dev \
-    libxslt1-dev \
-    libnuma-dev \
-    libopenblas-dev \
-    liblapack-dev \
-    libfontconfig1-dev \
-    libfreetype6-dev \
-    libx11-dev \
-    libxext-dev \
-    libxfixes-dev \
-    libxi-dev \
-    libepoxy-dev \
-    locales \
-    fonts-wqy-zenhei \
-    fonts-wqy-microhei \
-    fonts-noto-cjk \
-    && rm -rf /var/lib/apt/lists/* \
-    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-    && locale-gen \
-    && mkdir -p /var/run/sshd
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        sudo \
+        nano \
+        vim \
+        less \
+        tree \
+        tmux \
+        jq \
+        curl \
+        wget \
+        unzip \
+        locales \
+        zip \
+        tar \
+        patch \
+        dos2unix \
+        rsync \
+        openssh-server \
+        software-properties-common \
+        procps \
+        psmisc \
+        lsof \
+        strace \
+        gdb \
+        file \
+        git \
+        git-lfs \
+        net-tools \
+        iproute2 \
+        iputils-ping \
+        iputils-arping \
+        iputils-tracepath \
+        netcat-openbsd \
+        iperf3 \
+        htop \
+        nload \
+        pciutils \
+        dnsutils \
+        telnet \
+        build-essential \
+        gcc \
+        g++ \
+        g++-x86-64-linux-gnu \
+        make \
+        cmake \
+        ninja-build \
+        nasm \
+        gawk \
+        bison \
+        pkg-config \
+        python3 \
+        python3-dev \
+        python3-pip \
+        python3-venv \
+        python-is-python3 \
+        libssl-dev \
+        libffi-dev \
+        zlib1g \
+        zlib1g-dev \
+        libbz2-dev \
+        libsqlite3-dev \
+        libxslt1-dev \
+        libnuma-dev \
+        libopenblas-dev \
+        liblapack-dev \
+        libfontconfig1-dev \
+        libfreetype6-dev \
+        libx11-dev \
+        libxext-dev \
+        libxfixes-dev \
+        libxi-dev \
+        libepoxy-dev \
+        fonts-wqy-zenhei \
+        fonts-wqy-microhei \
+        fonts-noto-cjk; \
+    rm -rf /var/lib/apt/lists/*; \
+    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen; \
+    locale-gen en_US.UTF-8; \
+    update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8; \
+    mkdir -p /var/run/sshd
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-# 4) locale
-RUN locale-gen en_US.UTF-8 \
-    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
-
 COPY certs /usr/local/share/ca-certificates
-RUN update-ca-certificates
 
-# 5) 安装 Docker CLI / buildx / compose plugin
-RUN export http_proxy=http://host.docker.internal:18080 \
-    && export https_proxy=http://host.docker.internal:18080 \
-    && install -m 0755 -d /etc/apt/keyrings \
-    && curl -fsSLk https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
-    && chmod a+r /etc/apt/keyrings/docker.asc \
-    && . /etc/os-release \
-    && printf '%s\n' \
+RUN set -eux; \
+    update-ca-certificates || true
+
+RUN set -eux; \
+    install -m 0755 -d /etc/apt/keyrings; \
+    curl -fsSLk "${DOCKER_APT_BASE}/gpg" -o /etc/apt/keyrings/docker.asc; \
+    chmod a+r /etc/apt/keyrings/docker.asc; \
+    . /etc/os-release; \
+    printf '%s\n' \
         "Types: deb" \
-        "URIs: https://download.docker.com/linux/debian" \
-        "Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")" \
+        "URIs: ${DOCKER_APT_BASE}" \
+        "Suites: ${VERSION_CODENAME}" \
         "Components: stable" \
         "Architectures: $(dpkg --print-architecture)" \
         "Signed-By: /etc/apt/keyrings/docker.asc" \
-       > /etc/apt/sources.list.d/docker.sources \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-       docker-ce-cli \
-       docker-buildx-plugin \
-       docker-compose-plugin \
-    && rm -rf /var/lib/apt/lists/*
+        > /etc/apt/sources.list.d/docker.sources; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        docker-ce-cli \
+        docker-buildx-plugin \
+        docker-compose-plugin; \
+    rm -rf /var/lib/apt/lists/*
 
+RUN set -eux; \
+    printf '%s\n' \
+        '[global]' \
+        "index-url = ${PIP_INDEX_URL}" \
+        "trusted-host = ${PIP_TRUSTED_HOST}" \
+        'verify = false' \
+        'timeout = 120' \
+        > /etc/pip.conf; \
+    cat /etc/pip.conf; \
+    python3.11 -m pip install --upgrade pip "setuptools==${SETUPTOOLS_VERSION}" wheel
 
-ENV PIP_ROOT_USER_ACTION=ignore
-RUN echo '[global]' > /etc/pip.conf && \
-    echo 'index-url = https://mirrors.tools.huawei.com/pypi/simple' >> /etc/pip.conf && \
-    echo 'trusted-host = mirrors.tools.huawei.com' >> /etc/pip.conf && \
-    echo 'verify = false' >> /etc/pip.conf && \
-    echo 'timeout = 120' >> /etc/pip.conf \
-    && python3.11 -m pip install pip setuptools==80.0.0 wheel
+COPY cann /tmp/cann
 
-COPY cann /tmp/
-RUN bash /tmp/Ascend-cann_9.0.0_linux-x86_64.run --install --quiet --install-for-all \
-    && source /usr/local/Ascend/cann/set_env.sh \
-    && bash /tmp/Ascend-cann-910b-ops_9.0.0_linux-x86_64.run --install --quiet --install-for-all \
-    && rm -r /tmp/Ascend*
+RUN set -eux; \
+    cann_arch="${CANN_ARCH}"; \
+    cann_pkg="/tmp/cann/Ascend-cann_${CANN_VERSION}_linux-${cann_arch}.run"; \
+    ops_pkg="/tmp/cann/Ascend-cann-${CANN_CHIP}-ops_${CANN_VERSION}_linux-${cann_arch}.run"; \
+    echo "Using CANN package: ${cann_pkg}"; \
+    test -f "${cann_pkg}"; \
+    bash "${cann_pkg}" --install --quiet --install-for-all; \
+    if [ -f /usr/local/Ascend/cann/set_env.sh ]; then \
+        source /usr/local/Ascend/cann/set_env.sh; \
+    elif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then \
+        source /usr/local/Ascend/ascend-toolkit/set_env.sh; \
+    elif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then \
+        source /usr/local/Ascend/ascend-toolkit/latest/set_env.sh; \
+    fi; \
+    echo "Using CANN ops package: ${ops_pkg}"; \
+    test -f "${ops_pkg}"; \
+    bash "${ops_pkg}" --install --quiet --install-for-all; \
+    if [ -n "${CANN_NNAL_RUNFILE}" ]; then \
+        nnal_pkg="/tmp/cann/${CANN_NNAL_RUNFILE}"; \
+        echo "Using CANN NNAL package: ${nnal_pkg}"; \
+        test -f "${nnal_pkg}"; \
+        bash "${nnal_pkg}" --install --quiet --install-for-all; \
+    else \
+        echo "CANN_NNAL_RUNFILE is empty, skip NNAL installation"; \
+    fi; \
+    rm -rf /tmp/cann /tmp/Ascend*
 
-RUN echo 'if [ -f /usr/local/Ascend/cann/set_env.sh ]; then' > /etc/profile.d/ascend-cann.sh && \
-    echo '  source /usr/local/Ascend/cann/set_env.sh' >> /etc/profile.d/ascend-cann.sh && \
-    echo 'elif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then' >> /etc/profile.d/ascend-cann.sh && \
-    echo '  source /usr/local/Ascend/ascend-toolkit/set_env.sh' >> /etc/profile.d/ascend-cann.sh && \
-    echo 'elif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then' >> /etc/profile.d/ascend-cann.sh && \
-    echo '  source /usr/local/Ascend/ascend-toolkit/latest/set_env.sh' >> /etc/profile.d/ascend-cann.sh && \
-    echo 'fi' >> /etc/profile.d/ascend-cann.sh && \
-    echo '' >> /etc/profile.d/ascend-cann.sh
+RUN <<EOF
+set -eux
+cat > /etc/profile.d/ascend-cann.sh <<'EOT'
+if [ -f /usr/local/Ascend/cann/set_env.sh ]; then
+  . /usr/local/Ascend/cann/set_env.sh
+elif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then
+  . /usr/local/Ascend/ascend-toolkit/set_env.sh
+elif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then
+  . /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
+fi
 
+if [ -f /usr/local/Ascend/nnal/atb/set_env.sh ]; then
+  . /usr/local/Ascend/nnal/atb/set_env.sh
+fi
+EOT
+EOF
 
-RUN export http_proxy=http://host.docker.internal:18080 \
-    && export https_proxy=http://host.docker.internal:18080 \
-    && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
-    && export CURL_CA_BUNDLE="" \
-    && export SSL_CERT_FILE="" \
-    && echo "insecure" > ~/.curlrc \
-    && echo "check_certificate = off" > ~/.wgetrc \
-    && bash -c "curl -LsSfk https://astral.sh/uv/install.sh | sh"
+RUN set -eux; \
+    export CURL_CA_BUNDLE=""; \
+    export SSL_CERT_FILE=""; \
+    echo "insecure" > ~/.curlrc; \
+    echo "check_certificate = off" > ~/.wgetrc; \
+    curl -LsSfk https://astral.sh/uv/install.sh | bash
 
-# COPY pips /tmp/
-RUN export http_proxy=http://host.docker.internal:18080 \
-    && export https_proxy=http://host.docker.internal:18080 \
-    && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
-    && python -m pip install \
-        torch==2.10 torch_npu==2.10 triton-ascend==3.2.1 \
-        setuptools==80.0.0 \
+RUN set -eux; \
+    pkgs="torch==${TORCH_VERSION} torch_npu==${TORCH_NPU_VERSION} setuptools==${SETUPTOOLS_VERSION}"; \
+    if [ -n "${TRITON_ASCEND_VERSION}" ]; then \
+        pkgs="${pkgs} triton-ascend==${TRITON_ASCEND_VERSION}"; \
+    fi; \
+    python -m pip install \
+        ${pkgs} \
         -i https://download.pytorch.org/whl/cpu \
-        --extra-index-url=https://mirrors.tools.huawei.com/pypi/simple \
+        --extra-index-url="${PIP_INDEX_URL}" \
         --extra-index-url=https://triton-ascend.osinfra.cn/pypi/simple \
         --trusted-host=download.pytorch.org \
         --trusted-host=download-r2.pytorch.org \
-        --trusted-host=triton-ascend.osinfra.cn \
-        --trusted-host=mirrors.tools.huawei.com
+        --trusted-host="${PIP_TRUSTED_HOST}" \
+        --trusted-host=triton-ascend.osinfra.cn
 
-# 安装 MPI
-RUN export http_proxy=http://host.docker.internal:18080 \
-    && export https_proxy=http://host.docker.internal:18080 \
-    && export no_proxy=host.docker.internal,mirrors.tools.huawei.com,localhost,127.0.0.1 \
-    && source /etc/profile.d/ascend-cann.sh \
-    && wget --no-check-certificate https://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz \
-    && tar -zxvf mpich-3.2.1.tar.gz \
-    && cd mpich-3.2.1 \
-    && ./configure --disable-fortran --prefix=/usr/local/mpich \
-    && make -j"$(nproc)" \
-    && make install \
-    && rm -rf /tmp/mpich-3.2.1 /tmp/mpich-3.2.1.tar.gz
+RUN set -eux; \
+    source /etc/profile.d/ascend-cann.sh || true; \
+    cd /tmp; \
+    wget --no-check-certificate "https://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz"; \
+    tar -zxvf "mpich-3.2.1.tar.gz"; \
+    cd "mpich-3.2.1"; \
+    ./configure --disable-fortran --prefix=/usr/local/mpich; \
+    make -j"$(nproc)"; \
+    make install; \
+    rm -rf "/tmp/mpich-3.2.1" "/tmp/mpich-3.2.1.tar.gz"
 
 ENV PATH=/usr/local/mpich/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/mpich/lib:${LD_LIBRARY_PATH}
 
-RUN grep -q "force_color_prompt=yes" /root/.bashrc || echo 'force_color_prompt=yes' >> /root/.bashrc && \
-    echo '' >> /root/.bashrc && \
-    echo '# Force colored prompt and set host color to red' >> /root/.bashrc && \
-    echo 'export PS1='\''${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\[\033[01;31m\]\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '\''' >> /root/.bashrc
+RUN set -eux; \
+    grep -q "force_color_prompt=yes" /root/.bashrc || echo 'force_color_prompt=yes' >> /root/.bashrc; \
+    echo '' >> /root/.bashrc; \
+    echo '# Force colored prompt and set host color to red' >> /root/.bashrc; \
+    echo 'export PS1='\''${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\[\033[01;31m\]${HOSTNAME:0:16}\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '\''' >> /root/.bashrc
 
-# 配置 HCCL 以及相关工具
-# ENV HCCL_SOCKET_IFNAME=ens1f3
-# ENV GLOO_SOCKET_IFNAME=ens1f3
 ENV HCCL_IF_BASE_PORT=50000
 ENV HCCL_HOST_SOCKET_PORT_RANGE=60000-60050
 ENV HCCL_NPU_SOCKET_PORT_RANGE=61000-61050
@@ -240,7 +310,12 @@ ENV HCCL_BUFFSIZE=512
 ENV HCCL_WHITELIST_DISABLE=1
 ENV HCCL_OP_EXPANSION_MODE=AIV
 
-RUN export INSTALL_DIR=/usr/local/Ascend/ascend-toolkit/latest \
-    && source /etc/profile.d/ascend-cann.sh \
-    && cd ${INSTALL_DIR}/tools/hccl_test \
-    && make MPI_HOME=/usr/local/mpich ASCEND_DIR=${INSTALL_DIR}
+# =========================
+# 编译 hccl_test
+# =========================
+
+RUN set -eux; \
+    source /etc/profile.d/ascend-cann.sh; \
+    INSTALL_DIR=/usr/local/Ascend/ascend-toolkit/latest; \
+    cd "${INSTALL_DIR}/tools/hccl_test"; \
+    make MPI_HOME=/usr/local/mpich ASCEND_DIR="${INSTALL_DIR}"
