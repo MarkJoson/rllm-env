@@ -30,6 +30,8 @@ ARG PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
 ARG CANN_ARCH=x86_64
 ARG CANN_CHIP=910b
 ARG CANN_VERSION=9.0.0
+ARG CANN_RUNFILE=
+ARG CANN_OPS_RUNFILE=
 ARG CANN_NNAL_RUNFILE=
 
 # Python 依赖版本
@@ -214,8 +216,10 @@ COPY cann /tmp/cann
 
 RUN set -eux; \
     cann_arch="${CANN_ARCH}"; \
-    cann_pkg="/tmp/cann/Ascend-cann_${CANN_VERSION}_linux-${cann_arch}.run"; \
-    ops_pkg="/tmp/cann/Ascend-cann-${CANN_CHIP}-ops_${CANN_VERSION}_linux-${cann_arch}.run"; \
+    cann_runfile="${CANN_RUNFILE:-Ascend-cann_${CANN_VERSION}_linux-${cann_arch}.run}"; \
+    ops_runfile="${CANN_OPS_RUNFILE:-Ascend-cann-${CANN_CHIP}-ops_${CANN_VERSION}_linux-${cann_arch}.run}"; \
+    cann_pkg="/tmp/cann/${cann_runfile}"; \
+    ops_pkg="/tmp/cann/${ops_runfile}"; \
     echo "Using CANN package: ${cann_pkg}"; \
     test -f "${cann_pkg}"; \
     bash "${cann_pkg}" --install --quiet --install-for-all; \
@@ -310,9 +314,6 @@ ENV HCCL_BUFFSIZE=512
 ENV HCCL_WHITELIST_DISABLE=1
 ENV HCCL_OP_EXPANSION_MODE=AIV
 
-# =========================
-# 编译 hccl_test
-# =========================
 
 RUN set -eux; \
     source /etc/profile.d/ascend-cann.sh; \
