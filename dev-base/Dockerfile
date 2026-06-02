@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 ARG BASE_IMAGE=python:3.11-bookworm
 FROM ${BASE_IMAGE}
 
@@ -86,6 +85,8 @@ RUN set -eux; \
             'Acquire::https::Verify-Host "false";' \
             >> /etc/apt/apt.conf.d/99proxy; \
     fi; \
+    printf '%s\n' 'Acquire::AllowInsecureRepositories=true;' >> /etc/apt/apt.conf.d/98insecure; \
+    printf '%s\n' 'Acquire::AllowDowngradeToInsecureRepositories=true;' >> /etc/apt/apt.conf.d/98insecure; \
     cat /etc/apt/apt.conf.d/99proxy
 
 RUN set -eux; \
@@ -243,22 +244,8 @@ RUN set -eux; \
     fi; \
     rm -rf /tmp/cann /tmp/Ascend*
 
-RUN <<EOF
-set -eux
-cat > /etc/profile.d/ascend-cann.sh <<'EOT'
-if [ -f /usr/local/Ascend/cann/set_env.sh ]; then
-  . /usr/local/Ascend/cann/set_env.sh
-elif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then
-  . /usr/local/Ascend/ascend-toolkit/set_env.sh
-elif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then
-  . /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
-fi
-
-if [ -f /usr/local/Ascend/nnal/atb/set_env.sh ]; then
-  . /usr/local/Ascend/nnal/atb/set_env.sh
-fi
-EOT
-EOF
+RUN set -eux; \
+    bash -c $'cat > /etc/profile.d/ascend-cann.sh <<\'EOF\'\nif [ -f /usr/local/Ascend/cann/set_env.sh ]; then\n  . /usr/local/Ascend/cann/set_env.sh\nelif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then\n  . /usr/local/Ascend/ascend-toolkit/set_env.sh\nelif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then\n  . /usr/local/Ascend/ascend-toolkit/latest/set_env.sh\nfi\n\nif [ -f /usr/local/Ascend/nnal/atb/set_env.sh ]; then\n  . /usr/local/Ascend/nnal/atb/set_env.sh\nfi\nEOF\n'
 
 RUN set -eux; \
     export CURL_CA_BUNDLE=""; \
@@ -282,8 +269,8 @@ RUN set -eux; \
         --trusted-host="${PIP_TRUSTED_HOST}" \
         --trusted-host=triton-ascend.osinfra.cn
 
-RUN set -eux; \
-    source /etc/profile.d/ascend-cann.sh || true; \
+RUN source /etc/profile.d/ascend-cann.sh || true; \
+    set -eux; \
     cd /tmp; \
     wget --no-check-certificate "https://www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz"; \
     tar -zxvf "mpich-3.2.1.tar.gz"; \
@@ -315,8 +302,7 @@ ENV HCCL_WHITELIST_DISABLE=1
 ENV HCCL_OP_EXPANSION_MODE=AIV
 
 
-RUN set -eux; \
-    source /etc/profile.d/ascend-cann.sh; \
+RUN source /etc/profile.d/ascend-cann.sh; \
     INSTALL_DIR=/usr/local/Ascend/ascend-toolkit/latest; \
     cd "${INSTALL_DIR}/tools/hccl_test"; \
     make MPI_HOME=/usr/local/mpich ASCEND_DIR="${INSTALL_DIR}"

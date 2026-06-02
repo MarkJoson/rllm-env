@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 ARG BASE_IMAGE=ascend-cann900-dev:base
 FROM ${BASE_IMAGE}
 
@@ -19,8 +17,7 @@ ARG INSTALL_KERNELGYM=1
 ARG SETUPTOOLS_VERSION=80.0.0
 
 # 系统基础依赖
-RUN set -eux; \
-    apt-get update; \
+RUN apt-get update; \
     apt-get install -y --no-install-recommends \
         redis \
         postgresql-client-common \
@@ -31,8 +28,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # 基础 Python 依赖
-RUN set -eux; \
-    source /etc/profile.d/ascend-cann.sh || true; \
+RUN source /etc/profile.d/ascend-cann.sh || true; \
     python -m pip install -U \
         pip \
         "setuptools==${SETUPTOOLS_VERSION}" \
@@ -41,10 +37,11 @@ RUN set -eux; \
         hatch-vcs \
         nanobind \
         "cmake==3.28.4" \
-        nputop; \
+        nputop \
+        debugpy \
+        asyncpg; \
     python -m pip uninstall triton triton-ascend -y || true; \
     python -m pip install -v \
-        triton-ascend \
         debugpy \
         asyncpg \
         mbridge \
@@ -52,8 +49,7 @@ RUN set -eux; \
 
 # 安装 vllm，本地源码
 COPY pkgs/vllm /workspace/vllm
-RUN set -eux; \
-    if [ "${INSTALL_VLLM}" = "1" ]; then \
+RUN if [ "${INSTALL_VLLM}" = "1" ]; then \
         source /etc/profile.d/ascend-cann.sh; \
         python -m pip install -r /workspace/vllm/requirements/build.txt; \
         cd /workspace/vllm; \
@@ -63,8 +59,7 @@ RUN set -eux; \
 
 # 安装 vllm-ascend，本地源码
 COPY pkgs/vllm-ascend /workspace/vllm-ascend
-RUN set -eux; \
-    if [ "${INSTALL_VLLM_ASCEND}" = "1" ]; then \
+RUN if [ "${INSTALL_VLLM_ASCEND}" = "1" ]; then \
         source /etc/profile.d/ascend-cann.sh; \
         python -m pip install \
             nanobind \
@@ -80,8 +75,7 @@ RUN set -eux; \
 # 安装 Megatron-LM 与 MindSpeed，本地源码
 COPY pkgs/Megatron-LM /workspace/Megatron-LM
 COPY pkgs/MindSpeed /workspace/MindSpeed
-RUN set -eux; \
-    if [ "${INSTALL_MEGATRON_MINDSPEED}" = "1" ]; then \
+RUN if [ "${INSTALL_MEGATRON_MINDSPEED}" = "1" ]; then \
         source /etc/profile.d/ascend-cann.sh; \
         python -m pip install -e /workspace/Megatron-LM; \
         python -m pip install -e /workspace/MindSpeed; \
@@ -90,8 +84,7 @@ RUN set -eux; \
 
 # 安装 verl，本地源码
 COPY pkgs/verl /workspace/verl
-RUN set -eux; \
-    if [ "${INSTALL_VERL}" = "1" ]; then \
+RUN if [ "${INSTALL_VERL}" = "1" ]; then \
         source /etc/profile.d/ascend-cann.sh; \
         python -m pip install -r /workspace/verl/requirements-npu.txt \
             --no-build-isolation; \
@@ -101,8 +94,7 @@ RUN set -eux; \
 
 # 安装 rllm，本地源码
 COPY pkgs/rllm-071 /workspace/rllm-071
-RUN set -eux; \
-    if [ "${INSTALL_RLLM}" = "1" ]; then \
+RUN if [ "${INSTALL_RLLM}" = "1" ]; then \
         source /etc/profile.d/ascend-cann.sh; \
         cd /workspace/rllm-071; \
         python -m pip install -U \
@@ -117,29 +109,24 @@ RUN set -eux; \
 
 # 安装 kernelGym-NPU
 COPY pkgs/kernelGym-npu-main/ /workspace/kernelGym-npu-main
-RUN set -eux; \
-    if [ "${INSTALL_KERNELGYM}" = "1" ]; then \
+RUN if [ "${INSTALL_KERNELGYM}" = "1" ]; then \
         source /etc/profile.d/ascend-cann.sh || true; \
         cd /workspace/kernelGym-npu-main; \
         python -m pip uninstall triton triton-ascend -y || true; \
         python -m pip install -v \
             triton-ascend \
-            debugpy \
-            asyncpg \
             --no-build-isolation; \
     fi
 
 # 自动 source Ascend 环境变量
 # 固定默认行为：始终追加
-RUN set -eux; \
-    cat /etc/profile.d/ascend-cann.sh >> /root/.bashrc
+RUN cat /etc/profile.d/ascend-cann.sh >> /root/.bashrc
 
 # SSH 与入口脚本
 COPY .ssh /root/.ssh
 COPY entrypoint.sh /workspace/entrypoint.sh
 
-RUN set -eux; \
-    chmod 700 /root/.ssh || true; \
+RUN chmod 700 /root/.ssh || true; \
     chmod 600 /root/.ssh/* || true; \
     chmod +x /workspace/entrypoint.sh
 

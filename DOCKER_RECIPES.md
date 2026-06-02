@@ -38,7 +38,7 @@ Ascend-cann-nnal_9.0.0_linux-x86_64.run
 这个 recipe 构建完整环境：先构建 `base`，再构建带全部本地源码包的 `framework`。
 
 ```bash
-DOCKER_BUILDKIT=1 docker build \
+DOCKER_BUILDKIT=0 docker build \
   --platform=linux/amd64 \
   --add-host=host.docker.internal:host-gateway \
   -f dev-base/Dockerfile \
@@ -66,7 +66,7 @@ DOCKER_BUILDKIT=1 docker build \
 ```
 
 ```bash
-DOCKER_BUILDKIT=1 docker build \
+DOCKER_BUILDKIT=0 docker build \
   --platform=linux/amd64 \
   --add-host=host.docker.internal:host-gateway \
   -f dev-framework/Dockerfile \
@@ -87,7 +87,6 @@ DOCKER_BUILDKIT=1 docker build \
 
 ```bash
 DOCKER_BUILDKIT=1 docker build \
-  --platform=linux/arm64 \
   -f dev-base/Dockerfile \
   -t ascend-cann900-aarch64-tuna:base \
   --build-arg BASE_IMAGE=python:3.11-bookworm \
@@ -105,11 +104,11 @@ DOCKER_BUILDKIT=1 docker build \
   --build-arg CANN_VERSION=9.0.0 \
   --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-aarch64.run \
   --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-aarch64.run \
-  --build-arg CANN_NNAL_RUNFILE= \
+  --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-aarch64.run \
   --build-arg TORCH_VERSION=2.10 \
   --build-arg TORCH_NPU_VERSION=2.10 \
-  --build-arg TRITON_ASCEND_VERSION=3.2.1 \
   dev-base
+  # --build-arg TRITON_ASCEND_VERSION=3.2.1 \
 ```
 
 如需安装全部 framework 包：
