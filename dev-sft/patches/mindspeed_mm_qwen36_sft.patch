@@ -1,0 +1,448 @@
+diff --git a/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py b/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py
+index c9ab52d0..e0882108 100644
+--- a/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py
++++ b/mindspeed_mm/fsdp/models/qwen3_5/modeling_qwen3_5.py
+@@ -1133,7 +1133,6 @@ class Qwen3_5DecoderLayer(GradientCheckpointingLayer):
+             hidden_states = self.linear_attn(
+                 hidden_states=hidden_states,
+                 cache_params=past_key_values,
+-                cache_position=cache_position,
+                 attention_mask=attention_mask,
+                 **kwargs,
+             )
+@@ -1144,7 +1143,6 @@ class Qwen3_5DecoderLayer(GradientCheckpointingLayer):
+                 attention_mask=attention_mask,
+                 position_ids=position_ids,
+                 past_key_values=past_key_values,
+-                cache_position=cache_position,
+                 position_embeddings=position_embeddings,
+                 **kwargs,
+             )
+@@ -1698,7 +1696,6 @@ class Qwen3_5TextModel(Qwen3_5PreTrainedModel):
+                 config=self.config,
+                 inputs_embeds=inputs_embeds,
+                 attention_mask=attention_mask,
+-                cache_position=cache_position,
+                 past_key_values=past_key_values,
+                 position_ids=text_position_ids,
+             )
+@@ -1736,7 +1733,6 @@ class Qwen3_5TextModel(Qwen3_5PreTrainedModel):
+                 position_ids=text_position_ids,
+                 past_key_values=past_key_values,
+                 use_cache=use_cache,
+-                cache_position=cache_position,
+                 **new_kwargs,
+             )
+ 
+@@ -2071,7 +2067,6 @@ class Qwen3_5Model(Qwen3_5PreTrainedModel):
+             attention_mask=attention_mask,
+             past_key_values=past_key_values,
+             inputs_embeds=inputs_embeds,
+-            cache_position=cache_position,
+             **kwargs,
+         )
+ 
+@@ -2143,7 +2138,6 @@ class Qwen3_5ForCausalLM(Qwen3_5PreTrainedModel, GenerationMixin):
+             past_key_values=past_key_values,
+             inputs_embeds=inputs_embeds,
+             use_cache=use_cache,
+-            cache_position=cache_position,
+             **kwargs,
+         )
+ 
+@@ -2374,7 +2368,6 @@ class Qwen3_5ForConditionalGeneration(Qwen3_5PreTrainedModel, GenerationMixin):
+             attention_mask=attention_mask,
+             past_key_values=past_key_values,
+             inputs_embeds=inputs_embeds,
+-            cache_position=cache_position,
+             **kwargs,
+         )
+ 
+@@ -2405,7 +2398,6 @@ class Qwen3_5ForConditionalGeneration(Qwen3_5PreTrainedModel, GenerationMixin):
+             attention_mask=attention_mask,
+             position_ids=outputs.position_ids,
+             past_key_values=outputs.past_key_values,
+-            cache_position=cache_position,
+             logits_to_keep=logits_to_keep,
+             **kwargs,
+         )
+@@ -2443,7 +2435,6 @@ class Qwen3_5ForConditionalGeneration(Qwen3_5PreTrainedModel, GenerationMixin):
+             past_key_values=past_key_values,
+             attention_mask=attention_mask,
+             inputs_embeds=inputs_embeds,
+-            cache_position=cache_position,
+             position_ids=position_ids,
+             pixel_values=pixel_values,
+             pixel_values_videos=pixel_values_videos,
+diff --git a/mindspeed_mm/fsdp/ops/flash_attn/flash_attn.py b/mindspeed_mm/fsdp/ops/flash_attn/flash_attn.py
+index 959f3365..1e0d9a7f 100644
+--- a/mindspeed_mm/fsdp/ops/flash_attn/flash_attn.py
++++ b/mindspeed_mm/fsdp/ops/flash_attn/flash_attn.py
+@@ -53,7 +53,14 @@ def _convert_cu_seq_lens(
+ 
+     # 1. Convert Tensor to List if necessary
+     if isinstance(cu_seq_lens, torch.Tensor):
+-        cu_seq_lens = cu_seq_lens.tolist()
++        _cl = getattr(cu_seq_lens, "_cached_py_list", None)
++        if _cl is None:
++            _cl = cu_seq_lens.tolist()
++            try:
++                cu_seq_lens._cached_py_list = _cl
++            except Exception:
++                pass
++        cu_seq_lens = _cl
+ 
+     if input_layout:
+         # 2. Normalize layout string
+diff --git a/mindspeed_mm/fsdp/ops/fully_shard/fully_shard.py b/mindspeed_mm/fsdp/ops/fully_shard/fully_shard.py
+index 1d5cc649..0762827b 100644
+--- a/mindspeed_mm/fsdp/ops/fully_shard/fully_shard.py
++++ b/mindspeed_mm/fsdp/ops/fully_shard/fully_shard.py
+@@ -840,7 +840,7 @@ def apply_fully_shard_patch() -> None:
+     if "2.7.1" in torch.__version__:
+         FSDPParamGroup.wait_for_unshard = param_group_wait_for_unshard_pt27
+         FSDPParamGroup.post_backward = param_group_post_backward_pt27
+-    elif "2.9.0" in torch.__version__:
++    elif "2.9.0" in torch.__version__ or "2.10.0" in torch.__version__:
+         FSDPParamGroup.wait_for_unshard = param_group_wait_for_unshard_pt29
+         FSDPParamGroup.post_backward = param_group_post_backward_pt29
+     else:
+diff --git a/mindspeed_mm/fsdp/ops/gdn/flash_chunk_gated_delta_rule.py b/mindspeed_mm/fsdp/ops/gdn/flash_chunk_gated_delta_rule.py
+index 259a5b10..ed5f882c 100644
+--- a/mindspeed_mm/fsdp/ops/gdn/flash_chunk_gated_delta_rule.py
++++ b/mindspeed_mm/fsdp/ops/gdn/flash_chunk_gated_delta_rule.py
+@@ -68,6 +68,24 @@ def prepare_chunk_indices(
+ 
+     return indices
+ 
++def _cached_chunk_indices(cu_seqlens, chunk_size):
++    """tolist()+prepare_chunk_indices computed once/step, cached on the cu_seqlens tensor object
++    (same object across all GDN layers; fresh tensor next step -> auto-invalidates). Avoids the
++    ~Nx redundant .tolist() D2H syncs/step that the profile showed cost ~3s/step."""
++    if cu_seqlens is None:
++        return None, None
++    cached = getattr(cu_seqlens, "_gdn_ci_cache", None)
++    if cached is not None and cached[0] == chunk_size:
++        return cached[1], cached[2]
++    cu_list = cu_seqlens.tolist()
++    chunk_indices = prepare_chunk_indices(cu_list, chunk_size)
++    try:
++        cu_seqlens._gdn_ci_cache = (chunk_size, cu_list, chunk_indices)
++    except Exception:
++        pass
++    return cu_list, chunk_indices
++
++
+ def chunk_gated_delta_rule_fwd(
+     q: torch.Tensor,
+     k: torch.Tensor,
+@@ -96,12 +114,8 @@ def chunk_gated_delta_rule_fwd(
+         output_dtype=k.dtype
+     )
+ 
+-    if cu_seqlens is not None:
+-        cu_seqlens1 = cu_seqlens.tolist()
+-        chunk_indices = prepare_chunk_indices(cu_seqlens1, chunk_size)
+-    else:
+-        cu_seqlens1 = cu_seqlens
+-        chunk_indices = None
++    with torch.profiler.record_function("##gdn_host_prep"):
++        cu_seqlens1, chunk_indices = _cached_chunk_indices(cu_seqlens, chunk_size)
+ 
+     q = q.transpose(1, 2).contiguous()
+     k = k.transpose(1, 2).contiguous()
+@@ -166,12 +180,8 @@ def chunk_gated_delta_rule_bwd(
+     cu_seqlens: Optional[torch.LongTensor] = None,
+     chunk_size: int = 64,
+ ):
+-    if cu_seqlens is not None:
+-        cu_seqlens1 = cu_seqlens.tolist()
+-        chunk_indices = prepare_chunk_indices(cu_seqlens1, chunk_size)
+-    else:
+-        cu_seqlens1 = cu_seqlens
+-        chunk_indices = None
++    with torch.profiler.record_function("##gdn_host_prep"):
++        cu_seqlens1, chunk_indices = _cached_chunk_indices(cu_seqlens, chunk_size)
+ 
+     v = v.transpose(1, 2).contiguous()
+     q = q.transpose(1, 2).contiguous()
+diff --git a/mindspeed_mm/fsdp/ops/gdn/flash_gated_delta_rule.py b/mindspeed_mm/fsdp/ops/gdn/flash_gated_delta_rule.py
+index 04a557fb..bc6400f5 100644
+--- a/mindspeed_mm/fsdp/ops/gdn/flash_gated_delta_rule.py
++++ b/mindspeed_mm/fsdp/ops/gdn/flash_gated_delta_rule.py
+@@ -37,10 +37,11 @@ def prepare_lens(cu_seqlens: torch.LongTensor) -> torch.LongTensor:
+ 
+ 
+ def prepare_chunk_indices(cu_seqlens: torch.LongTensor, chunk_size: int) -> torch.LongTensor:
+-    indices = torch.cat(
+-        [torch.arange(n) for n in cdiv_torch(prepare_lens(cu_seqlens), chunk_size).tolist()]
+-    )
+-    return torch.stack([indices.eq(0).cumsum(0) - 1, indices], 1).to(cu_seqlens)
++    # VECTORIZED ragged-arange (no python loop / per-subseq arange / tolist D2H)
++    chunks = cdiv_torch(prepare_lens(cu_seqlens), chunk_size)
++    seg = torch.repeat_interleave(torch.arange(chunks.numel(), device=chunks.device), chunks)
++    indices = torch.arange(seg.numel(), device=chunks.device) - (chunks.cumsum(0) - chunks)[seg]
++    return torch.stack([seg, indices], 1).to(cu_seqlens)
+ 
+ 
+ def prepare_chunk_indices_list(cu_seqlens: list[int] | torch.LongTensor, chunk_size: int) -> list[int]:
+diff --git a/mindspeed_mm/fsdp/ops/gdn/triton/solve_tril.py b/mindspeed_mm/fsdp/ops/gdn/triton/solve_tril.py
+index 5e1a2631..f524f271 100644
+--- a/mindspeed_mm/fsdp/ops/gdn/triton/solve_tril.py
++++ b/mindspeed_mm/fsdp/ops/gdn/triton/solve_tril.py
+@@ -30,7 +30,7 @@ FLA_TRIL_PRECISION = os.environ.get('FLA_TRIL_PRECISION', 'ieee')
+ 
+ 
+ @triton.heuristics({"IS_VARLEN": lambda args: args["cu_seqlens"] is not None})
+-@triton.jit(do_not_specialize=["T"])
++@triton.jit(do_not_specialize=["T", "NT"])
+ def solve_tril_16x16_loop_kernel_paral_v3(
+         A_ptr,
+         Ad_ptr,
+@@ -41,7 +41,7 @@ def solve_tril_16x16_loop_kernel_paral_v3(
+         BT: tl.constexpr,
+         IS_VARLEN: tl.constexpr,
+         LARGE_BLOCK_T: tl.constexpr,
+-        NT: tl.constexpr,
++        NT,
+         BH: tl.constexpr,
+ ):
+     worker_id = tl.program_id(0)
+@@ -158,7 +158,7 @@ def solve_tril_16x16_loop_kernel_paral_v3(
+ 
+ 
+ @triton.heuristics({"IS_VARLEN": lambda args: args["cu_seqlens"] is not None})
+-@triton.jit(do_not_specialize=["T"])
++@triton.jit(do_not_specialize=["T", "NT"])
+ def merge_16x16_to_32x32_loop_inverse_kernel(
+         A,
+         Ad,
+@@ -169,7 +169,7 @@ def merge_16x16_to_32x32_loop_inverse_kernel(
+         H: tl.constexpr,
+         BT: tl.constexpr,
+         IS_VARLEN: tl.constexpr,
+-        NT: tl.constexpr,
++        NT,
+         BH: tl.constexpr,
+ ):
+     worker_id = tl.program_id(0)
+@@ -245,7 +245,7 @@ def merge_16x16_to_32x32_loop_inverse_kernel(
+         "IS_VARLEN": lambda args: args["cu_seqlens"] is not None,
+     }
+ )
+-@triton.jit(do_not_specialize=["T"])
++@triton.jit(do_not_specialize=["T", "NT"])
+ def merge_32x32_to_64x64_loop_inverse_kernel(
+         A,
+         Ad,
+@@ -256,7 +256,7 @@ def merge_32x32_to_64x64_loop_inverse_kernel(
+         H: tl.constexpr,
+         BT: tl.constexpr,
+         IS_VARLEN: tl.constexpr,
+-        NT: tl.constexpr,
++        NT,
+         BH: tl.constexpr,
+ ):
+     worker_id = tl.program_id(0)
+diff --git a/mindspeed_mm/fsdp/ops/gdn/triton/utils.py b/mindspeed_mm/fsdp/ops/gdn/triton/utils.py
+index 11a1d4e2..aaf4c830 100644
+--- a/mindspeed_mm/fsdp/ops/gdn/triton/utils.py
++++ b/mindspeed_mm/fsdp/ops/gdn/triton/utils.py
+@@ -89,10 +89,13 @@ def prepare_lens(cu_seqlens: torch.LongTensor) -> torch.LongTensor:
+     return cu_seqlens[1:] - cu_seqlens[:-1]
+ 
+ 
+-@tensor_cache(maxsize=3)
++@tensor_cache(maxsize=16)
+ def prepare_chunk_indices(cu_seqlens: torch.LongTensor, chunk_size: int) -> torch.LongTensor:
+-    indices = torch.cat([torch.arange(n) for n in triton.cdiv(prepare_lens(cu_seqlens), chunk_size).tolist()])
+-    return torch.stack([indices.eq(0).cumsum(0) - 1, indices], 1).to(cu_seqlens)
++    # VECTORIZED: == cat([arange(n) for n in chunks]); no python loop / per-subseq arange / tolist D2H
++    chunks = triton.cdiv(prepare_lens(cu_seqlens), chunk_size)
++    seg = torch.repeat_interleave(torch.arange(chunks.numel(), device=chunks.device), chunks)
++    indices = torch.arange(seg.numel(), device=chunks.device) - (chunks.cumsum(0) - chunks)[seg]
++    return torch.stack([seg, indices], 1).to(cu_seqlens)
+ 
+ 
+ def get_abs_err(x, y):
+@@ -143,6 +146,9 @@ else:
+         return None
+ 
+ 
++def _cpu_device_warning():
++    warnings.warn(('Triton is not supported on current platform, roll back to CPU.'), stacklevel=1)
++
+ @lru_cache(maxsize=None)
+ def get_available_device() -> str:
+     try:
+@@ -235,9 +241,6 @@ def input_guard(fn: Callable[..., torch.Tensor]) -> Callable[..., torch.Tensor]:
+     return wrapper
+ 
+ 
+-def _cpu_device_warning():
+-    warnings.warn(('Triton is not supported on current platform, roll back to CPU.'), stacklevel=1)
+-
+ 
+ @tensor_cache
+ def prepare_chunk_offsets(cu_seqlens: torch.LongTensor, chunk_size: int) -> torch.LongTensor:
+diff --git a/mindspeed_mm/fsdp/tools/profiler.py b/mindspeed_mm/fsdp/tools/profiler.py
+index 563dea1f..c2812b9d 100644
+--- a/mindspeed_mm/fsdp/tools/profiler.py
++++ b/mindspeed_mm/fsdp/tools/profiler.py
+@@ -145,6 +145,13 @@ class Profiler:
+         if self._enable_profile():
+             if self.profile_type == "static":
+                 self.prof.stop()
++                if self.sp_with_stack:
++                    try:
++                        self.prof.export_stacks(self.sp_save_path + "/stacks_npu.txt", "self_npu_time_total")
++                        self.prof.export_stacks(self.sp_save_path + "/stacks_cpu.txt", "self_cpu_time_total")
++                        logger.warning("export_stacks written to %s", self.sp_save_path)
++                    except Exception as e:
++                        logger.warning("export_stacks failed: %s", e)
+             else:
+                 pass
+ 
+diff --git a/mindspeed_mm/fsdp/train/train_engine.py b/mindspeed_mm/fsdp/train/train_engine.py
+index 1eebb0f7..c4f5507c 100644
+--- a/mindspeed_mm/fsdp/train/train_engine.py
++++ b/mindspeed_mm/fsdp/train/train_engine.py
+@@ -3,6 +3,8 @@ import logging
+ from datetime import datetime
+ 
+ import torch
++import os
++import math
+ 
+ from mindspeed.fsdp.utils.log import print_rank
+ 
+@@ -44,6 +46,7 @@ class TrainEngine:
+ 
+         self.model = model
+         self.train_dataloader = train_dataloader
++        self.val_dataloader = kwargs.get("val_dataloader", None)
+         self.optimizer = optimizer
+         self.lr_scheduler = scheduler
+         self.checkpointer = checkpointer
+@@ -140,7 +143,8 @@ class TrainEngine:
+ 
+             # forward step
+             TrainingContext().set_training_stage(TrainingStage.FORWARD)
+-            output = self.model(**batch_data, use_cache=False)
++            with torch.profiler.record_function("##fwd"):
++                output = self.model(**batch_data, use_cache=False)
+             loss = output.loss / args.training.gradient_accumulation_steps
+             total_loss += loss
+ 
+@@ -156,7 +160,8 @@ class TrainEngine:
+ 
+             # Backward
+             TrainingContext().set_training_stage(TrainingStage.BACKWARD)
+-            loss.backward()
++            with torch.profiler.record_function("##bwd"):
++                loss.backward()
+ 
+             if getattr(output, 'aux_loss', None) is not None:
+                 aux_loss = output.aux_loss / args.training.gradient_accumulation_steps
+@@ -179,6 +184,32 @@ class TrainEngine:
+ 
+         return loss_dict
+ 
++    @torch.no_grad()
++    def evaluate(self, eval_iters=12):
++        """Periodic validation-set eval: mean loss over a fixed set of val batches (no grad)."""
++        if getattr(self, "val_dataloader", None) is None:
++            return None
++        val_iter, _, _ = build_iterations(self.val_dataloader)
++        was_training = self.model.training
++        self.model.eval()
++        losses = []
++        for _ in range(eval_iters):
++            try:
++                batch_data = self.get_batch(val_iter)
++            except StopIteration:
++                break
++            if batch_data is None:
++                break
++            self.set_loss_func(batch_data)
++            output = self.model(**batch_data, use_cache=False)
++            l = self.average_losses_across_data_parallel_group([output.loss])
++            losses.append(l.item())
++        if was_training:
++            self.model.train()
++        if not losses:
++            return None
++        return sum(losses) / len(losses)
++
+     def train(self):
+         """Main training loop."""
+         args = self.args
+@@ -236,6 +267,13 @@ class TrainEngine:
+                     grad_norm,
+                 )
+ 
++            _ev = int(os.environ.get("EVAL_INTERVAL", "0"))
++            if _ev and getattr(self, "val_dataloader", None) is not None and self.iteration % _ev == 0:
++                _el = self.evaluate(int(os.environ.get("EVAL_ITERS", "12")))
++                if _el is not None:
++                    _ppl = math.exp(_el) if _el < 20 else float("inf")
++                    print_rank(logger.info, "[EVAL] iteration {} eval loss: {:.6f} eval ppl: {:.4f}".format(self.iteration, _el, _ppl))
++
+             # Report memory after optimizer state has been initialized.
+             if self.iteration == MEMORY_REPORT_ITERATION:
+                 report_memory('(after {} iterations)'.format(self.iteration))
+diff --git a/mindspeed_mm/fsdp/train/trainer.py b/mindspeed_mm/fsdp/train/trainer.py
+index 607a9bb0..b7de5d78 100644
+--- a/mindspeed_mm/fsdp/train/trainer.py
++++ b/mindspeed_mm/fsdp/train/trainer.py
+@@ -73,6 +73,7 @@ class Trainer:
+         self.model = self.get_model(model_provider)
+         self.optimizer = self.get_optimizer()
+         self.train_dataloader = self.get_dataloader() if dataloader_provider is None else dataloader_provider(args)
++        self.val_dataloader = self.get_val_dataloader()
+         self.checkpointer = self.get_checkpointer()
+ 
+         # Validate and calculate training iterations
+@@ -93,6 +94,7 @@ class Trainer:
+             self.optimizer,
+             self.lr_scheduler,
+             self.checkpointer,
++            val_dataloader=self.val_dataloader,
+             lora_weight_manager=self.lora_weight_manager,
+         )
+ 
+@@ -309,6 +311,34 @@ class Trainer:
+         )
+         return lr_scheduler
+ 
++
++    def get_val_dataloader(self):
++        """Build a validation dataloader from $VAL_DATA_PATH (disjoint val set); None if unset.
++        Reuses get_dataloader() by temporarily swapping the dataset path (lowest-risk)."""
++        import os
++        val_path = os.environ.get("VAL_DATA_PATH")
++        if not val_path:
++            return None
++        bp = self.args.data.dataset_param.basic_parameters
++        def _get(o, k):
++            return o[k] if isinstance(o, dict) else getattr(o, k, None)
++        def _set(o, k, v):
++            if isinstance(o, dict):
++                o[k] = v
++            else:
++                setattr(o, k, v)
++        orig_ds = _get(bp, "dataset")
++        orig_cache = _get(bp, "cache_dir")
++        try:
++            _set(bp, "dataset", val_path)
++            _set(bp, "cache_dir", "/tmp/ds_cache_val")
++            print_rank(logger.info, f"[EVAL] building val dataloader from {val_path}")
++            return self.get_dataloader()
++        finally:
++            _set(bp, "dataset", orig_ds)
++            if orig_cache is not None:
++                _set(bp, "cache_dir", orig_cache)
++
+     def get_dataloader(self):
+         """Build training dataloader with proper parallel partitioning."""
+         args = self.args

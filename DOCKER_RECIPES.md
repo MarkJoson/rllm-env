@@ -32,13 +32,20 @@ Ascend-cann_9.0.0_linux-x86_64.run
 Ascend-cann-910b-ops_9.0.0_linux-x86_64.run
 Ascend-cann-nnal_9.0.0_linux-x86_64.run
 ```
+> 说明:以下命令均使用 `docker buildx build`(默认 builder)。
+> - 迁移后的 Dockerfile 依赖 BuildKit(cache/bind mount、heredoc),**不能**再用 `DOCKER_BUILDKIT=0`。
+> - **不要**执行 `docker buildx create --use`;默认 builder 直接挂在 daemon 上,单平台构建即可,镜像自动进本地镜像库。
+> - 如果客户端报 "client version too new",先固定 API 版本:
+>   ```bash
+>   export DOCKER_API_VERSION="$(docker version --format '{{.Server.APIVersion}}')"
+>   ```
 
 ## 1. x86_64 + Huawei 代理 + CANN 9.0.0 + 全部包
 
-这个 recipe 构建完整环境：先构建 `base`，再构建带全部本地源码包的 `framework`。
+这个 recipe 构建完整环境:先构建 `base`,再构建带全部本地源码包的 `framework`。
 
 ```bash
-DOCKER_BUILDKIT=0 docker build \
+docker buildx build \
   --platform=linux/amd64 \
   --add-host=host.docker.internal:host-gateway \
   -f dev-base/Dockerfile \
@@ -62,11 +69,12 @@ DOCKER_BUILDKIT=0 docker build \
   --build-arg TORCH_VERSION=2.10 \
   --build-arg TORCH_NPU_VERSION=2.10 \
   --build-arg TRITON_ASCEND_VERSION=3.2.1 \
+  --load \
   dev-base
 ```
 
 ```bash
-DOCKER_BUILDKIT=0 docker build \
+docker buildx build \
   --platform=linux/amd64 \
   --add-host=host.docker.internal:host-gateway \
   -f dev-framework/Dockerfile \
@@ -78,15 +86,16 @@ DOCKER_BUILDKIT=0 docker build \
   --build-arg INSTALL_VERL=1 \
   --build-arg INSTALL_RLLM=1 \
   --build-arg INSTALL_KERNELGYM=1 \
+  --load \
   dev-framework
 ```
 
 ## 2. 无代理 + 清华源 + CANN 9.0.0
 
-这个 recipe 显式清空代理，并使用清华 Debian/Docker/PyPI 源。下面以当前仓库已有的 `aarch64` CANN 包为例；如果要构建 `x86_64`，把 `--platform` 和 `CANN_ARCH` 改成 `linux/amd64`、`x86_64`，并放入对应安装包。
+这个 recipe 显式清空代理,并使用清华 Debian/Docker/PyPI 源。下面以当前仓库已有的 `aarch64` CANN 包为例;如果要构建 `x86_64`,把 `--platform` 和 `CANN_ARCH` 改成 `linux/amd64`、`x86_64`,并放入对应安装包。
 
 ```bash
-DOCKER_BUILDKIT=1 docker build \
+docker buildx build \
   -f dev-base/Dockerfile \
   -t ascend-cann900-aarch64-tuna:base \
   --build-arg BASE_IMAGE=python:3.11-bookworm \
@@ -107,14 +116,15 @@ DOCKER_BUILDKIT=1 docker build \
   --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-aarch64.run \
   --build-arg TORCH_VERSION=2.10 \
   --build-arg TORCH_NPU_VERSION=2.10 \
+  --load \
   dev-base
   # --build-arg TRITON_ASCEND_VERSION=3.2.1 \
 ```
 
-如需安装全部 framework 包：
+如需安装全部 framework 包:
 
 ```bash
-DOCKER_BUILDKIT=1 docker build \
+docker buildx build \
   --platform=linux/arm64 \
   -f dev-framework/Dockerfile \
   -t ascend-cann900-aarch64-tuna:framework \
@@ -125,15 +135,16 @@ DOCKER_BUILDKIT=1 docker build \
   --build-arg INSTALL_VERL=1 \
   --build-arg INSTALL_RLLM=1 \
   --build-arg INSTALL_KERNELGYM=1 \
+  --load \
   dev-framework
 ```
 
 ## 3. 无代理 + 清华源 + CANN 8.5.2
 
-`8.5.2` 复用无代理和清华源配置。当前旧版 Dockerfile 里 `8.5.2` 用过 `triton-ascend 3.2.0`，这里也固定到 `3.2.0`，避免和旧环境产生不必要差异。
+`8.5.2` 复用无代理和清华源配置。当前旧版 Dockerfile 里 `8.5.2` 用过 `triton-ascend 3.2.0`,这里也固定到 `3.2.0`,避免和旧环境产生不必要差异。
 
 ```bash
-DOCKER_BUILDKIT=1 docker build \
+docker buildx build \
   --platform=linux/arm64 \
   -f dev-base/Dockerfile \
   -t ascend-cann852-aarch64-tuna:base \
@@ -156,13 +167,14 @@ DOCKER_BUILDKIT=1 docker build \
   --build-arg TORCH_VERSION=2.10 \
   --build-arg TORCH_NPU_VERSION=2.10 \
   --build-arg TRITON_ASCEND_VERSION=3.2.0 \
+  --load \
   dev-base
 ```
 
-如需安装全部 framework 包：
+如需安装全部 framework 包:
 
 ```bash
-DOCKER_BUILDKIT=1 docker build \
+docker buildx build \
   --platform=linux/arm64 \
   -f dev-framework/Dockerfile \
   -t ascend-cann852-aarch64-tuna:framework \
@@ -173,12 +185,14 @@ DOCKER_BUILDKIT=1 docker build \
   --build-arg INSTALL_VERL=1 \
   --build-arg INSTALL_RLLM=1 \
   --build-arg INSTALL_KERNELGYM=1 \
+  --load \
   dev-framework
 ```
 
 ## 运行容器
 
-如果只是快速进入完整 framework 镜像，可以用下面模板。镜像名替换为上面构建出的 `*:framework`。
+如果只是快速进入完整 framework 镜像,可以用下面模板。镜像名替换为上面构建出的 `*:framework`。
+(此处是 `docker run`,与 buildx 无关,保持不变。)
 
 ```bash
 docker run -it \
@@ -196,7 +210,7 @@ docker run -it \
   bash
 ```
 
-如果不想安装全部 framework 包，把对应开关改成 `0` 即可，例如只保留 `vllm` 和 `vllm-ascend`：
+如果不想安装全部 framework 包,把对应开关改成 `0` 即可,例如只保留 `vllm` 和 `vllm-ascend`:
 
 ```bash
 --build-arg INSTALL_MEGATRON_MINDSPEED=0

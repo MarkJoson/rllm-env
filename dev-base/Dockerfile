@@ -1,49 +1,57 @@
+# Migrated to BuildKit / buildx. Key changes vs. the classic build:
+#   - cache mounts for apt + pip (torch/torch_npu are huge -> big rebuild win)
+#   - bind mount for the CANN .run files (multi-GB files never enter a layer)
+#   - COPY/RUN heredocs replace the brittle `bash -c $'...'` blocks
+#   - PIP_NO_CACHE_DIR removed so the pip cache mount actually does something
+# Build with `docker buildx build` (see notes at the bottom of this file).
+ 
 ARG BASE_IMAGE=python:3.11-bookworm
 FROM ${BASE_IMAGE}
-
+ 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
+ 
 ARG DEBIAN_FRONTEND=noninteractive
-
-# 代理参数
+ 
+# 代理参数 (buildx forwards these automatically as build-args; ARG keeps the defaults)
 ARG HTTP_PROXY=http://host.docker.internal:18080
 ARG HTTPS_PROXY=http://host.docker.internal:18080
 ARG NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com,mirrors.tuna.tsinghua.edu.cn,pypi.tuna.tsinghua.edu.cn,download.pytorch.org,download-r2.pytorch.org,triton-ascend.osinfra.cn
-
+ 
 ARG DEBIAN_MIRROR_HOST=mirrors.tuna.tsinghua.edu.cn
 ARG APT_DIRECT_HOSTS="mirrors.tools.huawei.com"
 ARG APT_INSECURE=1
-
+ 
 # Docker CE apt 源
-# 清华源：
 #   https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian
 #   https://download.docker.com/linux/debian
 ARG DOCKER_APT_BASE=https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian
-
+ 
 # PyPI 源
 #   https://pypi.tuna.tsinghua.edu.cn/simple
 #   https://mirrors.tools.huawei.com/pypi/simple
 ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 ARG PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
-
+ 
+# Multi-arch hook: buildx sets TARGETARCH. CANN names use x86_64 / aarch64.
+# Leave CANN_ARCH empty to auto-derive it from TARGETARCH in the install step.
+ARG TARGETARCH
 ARG CANN_ARCH=x86_64
 ARG CANN_CHIP=910b
 ARG CANN_VERSION=9.0.0
 ARG CANN_RUNFILE=
 ARG CANN_OPS_RUNFILE=
 ARG CANN_NNAL_RUNFILE=
-
+ 
 # Python 依赖版本
 ARG SETUPTOOLS_VERSION=80.0.0
 ARG TORCH_VERSION=2.10
 ARG TORCH_NPU_VERSION=2.10
 ARG TRITON_ASCEND_VERSION=3.2.1
-
+ 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
     PIP_ROOT_USER_ACTION=ignore \
     DOCKER_HOST=unix:///var/run/docker.sock \
     http_proxy=${HTTP_PROXY} \
@@ -52,9 +60,10 @@ ENV LANG=en_US.UTF-8 \
     HTTP_PROXY=${HTTP_PROXY} \
     HTTPS_PROXY=${HTTPS_PROXY} \
     NO_PROXY=${NO_PROXY}
-
+ 
 WORKDIR /workspace
-
+ 
+# --- apt mirror rewrite (edits persisted files, no mount needed) -------------
 RUN set -eux; \
     if [ -f /etc/apt/sources.list ]; then \
         sed -i "s@deb.debian.org@${DEBIAN_MIRROR_HOST}@g" /etc/apt/sources.list; \
@@ -65,7 +74,8 @@ RUN set -eux; \
         sed -i "s@security.debian.org@${DEBIAN_MIRROR_HOST}@g" /etc/apt/sources.list.d/debian.sources; \
     fi; \
     true
-
+ 
+# --- apt proxy + insecure config --------------------------------------------
 RUN set -eux; \
     mkdir -p /etc/apt/apt.conf.d; \
     : > /etc/apt/apt.conf.d/99proxy; \
@@ -88,8 +98,12 @@ RUN set -eux; \
     printf '%s\n' 'Acquire::AllowInsecureRepositories=true;' >> /etc/apt/apt.conf.d/98insecure; \
     printf '%s\n' 'Acquire::AllowDowngradeToInsecureRepositories=true;' >> /etc/apt/apt.conf.d/98insecure; \
     cat /etc/apt/apt.conf.d/99proxy
-
-RUN set -eux; \
+ 
+# --- base packages (cache mounts; keep downloaded debs + lists in cache) -----
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -eux; \
+    rm -f /etc/apt/apt.conf.d/docker-clean; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -167,22 +181,24 @@ RUN set -eux; \
         fonts-wqy-zenhei \
         fonts-wqy-microhei \
         fonts-noto-cjk; \
-    rm -rf /var/lib/apt/lists/*; \
     sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen; \
     locale-gen en_US.UTF-8; \
     update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8; \
     mkdir -p /var/run/sshd
-
+ 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
-
+ 
 COPY certs /usr/local/share/ca-certificates
-
+ 
 RUN set -eux; \
     update-ca-certificates || true
-
-RUN set -eux; \
+ 
+# --- Docker CE CLI / buildx / compose ----------------------------------------
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -eux; \
     install -m 0755 -d /etc/apt/keyrings; \
     curl -fsSLk "${DOCKER_APT_BASE}/gpg" -o /etc/apt/keyrings/docker.asc; \
     chmod a+r /etc/apt/keyrings/docker.asc; \
@@ -199,10 +215,11 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         docker-ce-cli \
         docker-buildx-plugin \
-        docker-compose-plugin; \
-    rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
+        docker-compose-plugin
+ 
+# --- pip config + base build tooling (pip cache mount) -----------------------
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    set -eux; \
     printf '%s\n' \
         '[global]' \
         "index-url = ${PIP_INDEX_URL}" \
@@ -212,11 +229,19 @@ RUN set -eux; \
         > /etc/pip.conf; \
     cat /etc/pip.conf; \
     python3.11 -m pip install --upgrade pip "setuptools==${SETUPTOOLS_VERSION}" wheel
-
-COPY cann /tmp/cann
-
-RUN set -eux; \
+ 
+# --- CANN install via bind mount (runfiles stay out of the image layers) -----
+# Build context must contain a `cann/` directory with the .run files.
+RUN --mount=type=bind,source=cann,target=/tmp/cann \
+    set -eux; \
     cann_arch="${CANN_ARCH}"; \
+    if [ -z "${cann_arch}" ]; then \
+        case "${TARGETARCH}" in \
+            arm64) cann_arch=aarch64 ;; \
+            amd64|"") cann_arch=x86_64 ;; \
+            *) cann_arch="${TARGETARCH}" ;; \
+        esac; \
+    fi; \
     cann_runfile="${CANN_RUNFILE:-Ascend-cann_${CANN_VERSION}_linux-${cann_arch}.run}"; \
     ops_runfile="${CANN_OPS_RUNFILE:-Ascend-cann-${CANN_CHIP}-ops_${CANN_VERSION}_linux-${cann_arch}.run}"; \
     cann_pkg="/tmp/cann/${cann_runfile}"; \
@@ -242,19 +267,34 @@ RUN set -eux; \
     else \
         echo "CANN_NNAL_RUNFILE is empty, skip NNAL installation"; \
     fi; \
-    rm -rf /tmp/cann /tmp/Ascend*
-
-RUN set -eux; \
-    bash -c $'cat > /etc/profile.d/ascend-cann.sh <<\'EOF\'\nif [ -f /usr/local/Ascend/cann/set_env.sh ]; then\n  . /usr/local/Ascend/cann/set_env.sh\nelif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then\n  . /usr/local/Ascend/ascend-toolkit/set_env.sh\nelif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then\n  . /usr/local/Ascend/ascend-toolkit/latest/set_env.sh\nfi\n\nif [ -f /usr/local/Ascend/nnal/atb/set_env.sh ]; then\n  . /usr/local/Ascend/nnal/atb/set_env.sh\nfi\nEOF\n'
-
+    rm -rf /tmp/Ascend*
+ 
+# --- CANN env profile (COPY heredoc instead of bash -c $'...') ----------------
+COPY <<'EOF' /etc/profile.d/ascend-cann.sh
+if [ -f /usr/local/Ascend/cann/set_env.sh ]; then
+  . /usr/local/Ascend/cann/set_env.sh
+elif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then
+  . /usr/local/Ascend/ascend-toolkit/set_env.sh
+elif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then
+  . /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
+fi
+ 
+if [ -f /usr/local/Ascend/nnal/atb/set_env.sh ]; then
+  . /usr/local/Ascend/nnal/atb/set_env.sh
+fi
+EOF
+ 
+# --- uv ----------------------------------------------------------------------
 RUN set -eux; \
     export CURL_CA_BUNDLE=""; \
     export SSL_CERT_FILE=""; \
     echo "insecure" > ~/.curlrc; \
     echo "check_certificate = off" > ~/.wgetrc; \
     curl -LsSfk https://astral.sh/uv/install.sh | bash
-
-RUN set -eux; \
+ 
+# --- torch / torch_npu / triton-ascend (pip cache mount) ---------------------
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    set -eux; \
     pkgs="torch==${TORCH_VERSION} torch_npu==${TORCH_NPU_VERSION} setuptools==${SETUPTOOLS_VERSION}"; \
     if [ -n "${TRITON_ASCEND_VERSION}" ]; then \
         pkgs="${pkgs} triton-ascend==${TRITON_ASCEND_VERSION}"; \
@@ -268,7 +308,8 @@ RUN set -eux; \
         --trusted-host=download-r2.pytorch.org \
         --trusted-host="${PIP_TRUSTED_HOST}" \
         --trusted-host=triton-ascend.osinfra.cn
-
+ 
+# --- MPICH -------------------------------------------------------------------
 RUN source /etc/profile.d/ascend-cann.sh || true; \
     set -eux; \
     cd /tmp; \
@@ -279,16 +320,21 @@ RUN source /etc/profile.d/ascend-cann.sh || true; \
     make -j"$(nproc)"; \
     make install; \
     rm -rf "/tmp/mpich-3.2.1" "/tmp/mpich-3.2.1.tar.gz"
-
+ 
 ENV PATH=/usr/local/mpich/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/mpich/lib:${LD_LIBRARY_PATH}
-
-RUN set -eux; \
-    grep -q "force_color_prompt=yes" /root/.bashrc || echo 'force_color_prompt=yes' >> /root/.bashrc; \
-    echo '' >> /root/.bashrc; \
-    echo '# Force colored prompt and set host color to red' >> /root/.bashrc; \
-    echo 'export PS1='\''${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\[\033[01;31m\]${HOSTNAME:0:16}\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '\''' >> /root/.bashrc
-
+ 
+# --- colored prompt (RUN heredoc instead of escaped one-liners) --------------
+RUN <<'EOF'
+set -eux
+grep -q "force_color_prompt=yes" /root/.bashrc || echo 'force_color_prompt=yes' >> /root/.bashrc
+cat >> /root/.bashrc <<'BASHRC'
+ 
+# Force colored prompt and set host color to red
+export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\[\033[01;31m\]${HOSTNAME:0:16}\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+BASHRC
+EOF
+ 
 ENV HCCL_IF_BASE_PORT=50000
 ENV HCCL_HOST_SOCKET_PORT_RANGE=60000-60050
 ENV HCCL_NPU_SOCKET_PORT_RANGE=61000-61050
@@ -300,9 +346,11 @@ ENV HCCL_CONNECT_TIMEOUT=600
 ENV HCCL_BUFFSIZE=512
 ENV HCCL_WHITELIST_DISABLE=1
 ENV HCCL_OP_EXPANSION_MODE=AIV
-
-
+ 
+# --- hccl_test ---------------------------------------------------------------
 RUN source /etc/profile.d/ascend-cann.sh; \
+    set -eux; \
     INSTALL_DIR=/usr/local/Ascend/ascend-toolkit/latest; \
     cd "${INSTALL_DIR}/tools/hccl_test"; \
     make MPI_HOME=/usr/local/mpich ASCEND_DIR="${INSTALL_DIR}"
+

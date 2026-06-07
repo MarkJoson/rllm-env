@@ -1,0 +1,1212 @@
++ cd /home/sunzhihao/rllm-env
++ export DOCKER_BUILDKIT=0
++ DOCKER_BUILDKIT=0
++ docker build -t qwen36sft:latest -f dev-sft/Dockerfile --build-arg BASE_IMAGE=ascend-cann900-aarch64-tuna:base --build-arg FLA_BUILD_MODE=prebuilt dev-sft
+Sending build context to Docker daemon  19.17MB
+Step 1/37 : ARG BASE_IMAGE=ascend-cann900-aarch64-tuna:base
+Step 2/37 : FROM ${BASE_IMAGE}
+ ---> c0f95442efe4
+Step 3/37 : SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ ---> Using cache
+ ---> b2b0145deefa
+Step 4/37 : WORKDIR /workspace
+ ---> Using cache
+ ---> 3e32ba519abd
+Step 5/37 : ARG HTTP_PROXY=
+ ---> Using cache
+ ---> 10f4d00ac22a
+Step 6/37 : ARG HTTPS_PROXY=
+ ---> Using cache
+ ---> 2213e6829aed
+Step 7/37 : ARG NO_PROXY=
+ ---> Using cache
+ ---> 61da213253b6
+Step 8/37 : ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ ---> Using cache
+ ---> 68d24c722c29
+Step 9/37 : ARG PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
+ ---> Using cache
+ ---> d158aeff3cce
+Step 10/37 : ENV http_proxy=${HTTP_PROXY}     https_proxy=${HTTPS_PROXY}     no_proxy=${NO_PROXY}     HTTP_PROXY=${HTTP_PROXY}     HTTPS_PROXY=${HTTPS_PROXY}     NO_PROXY=${NO_PROXY}     PIP_ROOT_USER_ACTION=ignore     PIP_INDEX_URL=${PIP_INDEX_URL}     PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST}     GIT_SSL_NO_VERIFY=1     PYTHONDONTWRITEBYTECODE=1
+ ---> Using cache
+ ---> 8fec0babcaba
+Step 11/37 : ARG MINDSPEED_REPO=https://gitcode.com/Ascend/MindSpeed.git
+ ---> Using cache
+ ---> 309debfaade6
+Step 12/37 : ARG MINDSPEED_COMMIT=5753d412882317b113e08103a2b0b7155345096a
+ ---> Using cache
+ ---> f27f53687241
+Step 13/37 : ARG MINDSPEED_MM_REPO=https://github.com/Ascend/MindSpeed-MM.git
+ ---> Using cache
+ ---> 6745416e7c6b
+Step 14/37 : ARG MINDSPEED_MM_COMMIT=cd34547968d9de915b826f1cba9e05d27153167b
+ ---> Using cache
+ ---> d7cae84cf9e5
+Step 15/37 : ARG TRANSFORMERS_COMMIT=94246e689c03551bd97624d436de4c7e2d937063
+ ---> Using cache
+ ---> 0610c69864d6
+Step 16/37 : ARG FLA_REPO=https://github.com/flashserve/flash-linear-attention-npu.git
+ ---> Using cache
+ ---> 9f2658e47588
+Step 17/37 : ARG FLA_COMMIT=eabe36b5cda0799a1672c9fc7c24cabbf12c463e
+ ---> Using cache
+ ---> e800a2e4cf4b
+Step 18/37 : ARG FLA_SOC=ascend910b
+ ---> Using cache
+ ---> 67f67b0a308e
+Step 19/37 : ARG FLA_BUILD_MODE=source
+ ---> Using cache
+ ---> ce41ef61e369
+Step 20/37 : ARG CANN_HOME=/usr/local/Ascend/cann-9.0.0
+ ---> Using cache
+ ---> 88184129f090
+Step 21/37 : ARG FLA_VENDOR_LIB=/usr/local/Ascend/cann-9.0.0/opp/vendors/fla_npu_transformer/op_api/lib
+ ---> Using cache
+ ---> caad8197a7d3
+Step 22/37 : COPY requirements.lock.txt /workspace/requirements.lock.txt
+ ---> Using cache
+ ---> e87461e709d2
+Step 23/37 : RUN set -ex; source /etc/profile.d/ascend-cann.sh || true;     python -m pip install --no-deps -r /workspace/requirements.lock.txt         --extra-index-url https://download.pytorch.org/whl/cpu         --extra-index-url https://triton-ascend.osinfra.cn/pypi/simple         --trusted-host download.pytorch.org         --trusted-host download-r2.pytorch.org         --trusted-host "${PIP_TRUSTED_HOST}"         --trusted-host triton-ascend.osinfra.cn
+ ---> Running in 2225e1232519
+[91m+ source /etc/profile.d/ascend-cann.sh
+[0m[91m++ '[' -f /usr/local/Ascend/cann/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/cann/set_env.sh
+[0m[91m+++ setenv_main
+[0m[91m+++ local version_dirpath install_dirpath my_ld_library_path my_path driver_install_path_param dep_hal_path
++++ local dep_hal_name=libascend_hal.so
++++ local dep_info_file=/etc/ascend_install.info
++++ local is_install_driver=n
++++ local architecture remove_regex
++++ version_dirpath=/usr/local/Ascend/cann-9.0.0
+[0m[91m++++ dirname /usr/local/Ascend/cann-9.0.0
+[0m[91m+++ install_dirpath=/usr/local/Ascend
++++ remove_regex='^/usr/local/Ascend/cann[/_-]'
++++ remove_env PATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=PATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PATH}'
+[0m[91m+++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ read -r PATH
+[0m[91m++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PATH
+[0m[91m+++ remove_env LD_LIBRARY_PATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=LD_LIBRARY_PATH
+[0m[91m+++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
+[0m[91m+++ read -r LD_LIBRARY_PATH
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ remove_env PYTHONPATH '^/usr/local/Ascend/cann[/_-]'
++++ local name=PYTHONPATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PYTHONPATH}'
+[0m[91m+++++ echo
+[0m[91m+++ local env_value=
++++ read -r PYTHONPATH
+[0m[91m++++ echo ''
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PYTHONPATH
+[0m[91m+++ my_ld_library_path=/usr/local/mpich/lib:
+[0m[91m+++ '[' '!' -z /usr/local/mpich/lib: ']'
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : ' '
+[0m[91m+++ my_ld_library_path='/usr/local/mpich/lib '
++++ for my_path in ${my_ld_library_path}
+[0m[91m+++ echo /usr/local/mpich/lib
+[0m[91m+++ grep -q driver
+[0m[91m+++ '[' -f /etc/ascend_install.info ']'
+[0m[91m+++ case ":$PATH:" in
++++ command -v ldconfig
+[0m[91m+++ ldconfig -p
+[0m[91m+++ grep -q -- libascend_hal.so
+[0m[91m+++ command -v arch
+[0m[91m++++ arch
+[0m[91m+++ architecture=aarch64
+[0m[91m+++ prepend_env PATH /usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
++++ local name=PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
+[0m[91m++++ eval echo '${PATH}'
+[0m[91m+++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ '[' /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin = '' ']'
++++ read -r PATH
+[0m[91m+++ export PATH
+[0m[91m+++ prepend_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
+[0m[91m+++ local name=LD_LIBRARY_PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
+[0m[91m+++ '[' /usr/local/mpich/lib: = '' ']'
++++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ '[' n = n ']'
+[0m[91m+++ append_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m+++ local name=LD_LIBRARY_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
+[0m[91m+++ '[' /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib: = '' ']'
++++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
++++ ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
+[0m[91m+++ export ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
+[0m[91m+++ export TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
++++ TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
+[0m[91m+++ export ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
+[0m[91m+++ export ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
+[0m[91m+++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ local name=CMAKE_PREFIX_PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo
+[0m[91m+++ local env_value=
+[0m[91m+++ '[' '' = '' ']'
++++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m+++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
+[0m[91m+++ local name=CMAKE_PREFIX_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ '[' /usr/local/Ascend/cann-9.0.0/lib64/cmake = '' ']'
+[0m[91m+++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m++ '[' -f /usr/local/Ascend/nnal/atb/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m+++ set_env_path=/usr/local/Ascend/nnal/atb/set_env.sh
++++ [[ -n '' ]]
+[0m[91m+++ [[ -f /usr/local/Ascend/nnal/atb/set_env.sh ]]
++++ [[ /usr/local/Ascend/nnal/atb/set_env.sh =~ (^|/)set_env\.sh$ ]]
+[0m[91m+++++ dirname /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m++++ cd /usr/local/Ascend/nnal/atb
+[0m[91m++++ pwd
+[0m[91m+++ atb_path=/usr/local/Ascend/nnal/atb
+[0m[91m+++ get_cxx_abi_option
+[0m[91m+++ cxx_abi=
++++ [[ -z '' ]]
+[0m[91m+++ [[ '' == '' ]]
+[0m[91m++++ python3 -c 'import torch'
+[0m[91m+++ res=
++++ [[ '' == \t\o\r\c\h\_\n\o\t\_\e\x\i\s\t ]]
+[0m[91m++++ python3 -c 'import torch; print(torch.compiled_with_cxx11_abi())'
+[0m[91mcan not use command: npu-smi info
+[0m[91m+++ [[ True == \T\r\u\e ]]
++++ cxx_abi=1
+[0m[91m+++ export ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
++++ ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
+[0m[91m+++ export LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ export PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ export ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ export ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
++++ export ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ export ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ export ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
++++ ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
++++ export ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
++++ ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
++++ export ATB_COMPARE_TILING_EVERY_KERNEL=0
++++ ATB_COMPARE_TILING_EVERY_KERNEL=0
+[0m[91m+++ export ATB_SHARE_MEMORY_NAME_SUFFIX=
++++ ATB_SHARE_MEMORY_NAME_SUFFIX=
++++ export ATB_MATMUL_SHUFFLE_K_ENABLE=1
++++ ATB_MATMUL_SHUFFLE_K_ENABLE=1
++++ export LCCL_DETERMINISTIC=0
++++ LCCL_DETERMINISTIC=0
++++ export LCCL_PARALLEL=0
++++ LCCL_PARALLEL=0
+[0m[91m+ python -m pip install --no-deps -r /workspace/requirements.lock.txt --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://triton-ascend.osinfra.cn/pypi/simple --trusted-host download.pytorch.org --trusted-host download-r2.pytorch.org --trusted-host pypi.tuna.tsinghua.edu.cn --trusted-host triton-ascend.osinfra.cn
+[0mLooking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple, https://download.pytorch.org/whl/cpu, https://triton-ascend.osinfra.cn/pypi/simple
+Collecting accelerate==1.13.0 (from -r /workspace/requirements.lock.txt (line 1))
+  Downloading accelerate-1.13.0-py3-none-any.whl (383 kB)
+Collecting aiohappyeyeballs==2.6.2 (from -r /workspace/requirements.lock.txt (line 2))
+  Downloading aiohappyeyeballs-2.6.2-py3-none-any.whl (15 kB)
+Collecting aiohttp==3.14.0 (from -r /workspace/requirements.lock.txt (line 3))
+  Downloading aiohttp-3.14.0-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (1.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 98.0 MB/s  0:00:00
+Collecting aiosignal==1.4.0 (from -r /workspace/requirements.lock.txt (line 4))
+  Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+Collecting annotated-doc==0.0.4 (from -r /workspace/requirements.lock.txt (line 5))
+  Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+Collecting annotated-types==0.7.0 (from -r /workspace/requirements.lock.txt (line 6))
+  Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Collecting anyio==4.13.0 (from -r /workspace/requirements.lock.txt (line 7))
+  Downloading anyio-4.13.0-py3-none-any.whl (114 kB)
+Collecting asyncpg==0.31.0 (from -r /workspace/requirements.lock.txt (line 8))
+  Downloading asyncpg-0.31.0-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (2.9 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.9/2.9 MB 88.2 MB/s  0:00:00
+Collecting attrs==26.1.0 (from -r /workspace/requirements.lock.txt (line 9))
+  Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+Collecting av==17.0.1 (from -r /workspace/requirements.lock.txt (line 10))
+  Downloading av-17.0.1-cp311-abi3-manylinux_2_28_aarch64.whl (34.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 34.0/34.0 MB 74.1 MB/s  0:00:00
+Collecting beartype==0.22.9 (from -r /workspace/requirements.lock.txt (line 11))
+  Downloading beartype-0.22.9-py3-none-any.whl (1.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 64.4 MB/s  0:00:00
+Collecting beautifulsoup4==4.14.3 (from -r /workspace/requirements.lock.txt (line 12))
+  Downloading beautifulsoup4-4.14.3-py3-none-any.whl (107 kB)
+Collecting bs4==0.0.2 (from -r /workspace/requirements.lock.txt (line 13))
+  Downloading bs4-0.0.2-py2.py3-none-any.whl (1.2 kB)
+Collecting certifi==2026.5.20 (from -r /workspace/requirements.lock.txt (line 14))
+  Downloading certifi-2026.5.20-py3-none-any.whl (134 kB)
+Collecting charset-normalizer==3.4.7 (from -r /workspace/requirements.lock.txt (line 15))
+  Downloading charset_normalizer-3.4.7-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (206 kB)
+Collecting click==8.4.1 (from -r /workspace/requirements.lock.txt (line 16))
+  Downloading click-8.4.1-py3-none-any.whl (116 kB)
+Collecting cmake==3.28.4 (from -r /workspace/requirements.lock.txt (line 17))
+  Downloading cmake-3.28.4-py2.py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (25.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 25.6/25.6 MB 56.8 MB/s  0:00:00
+Collecting datasets==4.8.5 (from -r /workspace/requirements.lock.txt (line 18))
+  Downloading datasets-4.8.5-py3-none-any.whl (528 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 529.0/529.0 kB 49.2 MB/s  0:00:00
+Collecting debugpy==1.8.20 (from -r /workspace/requirements.lock.txt (line 19))
+  Downloading debugpy-1.8.20-py2.py3-none-any.whl (5.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.3/5.3 MB 95.2 MB/s  0:00:00
+Collecting decorator==5.3.1 (from -r /workspace/requirements.lock.txt (line 20))
+  Downloading decorator-5.3.1-py3-none-any.whl (10 kB)
+Collecting diffusers==0.37.1 (from -r /workspace/requirements.lock.txt (line 21))
+  Downloading diffusers-0.37.1-py3-none-any.whl (5.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.0/5.0 MB 91.5 MB/s  0:00:00
+Collecting dill==0.4.1 (from -r /workspace/requirements.lock.txt (line 22))
+  Downloading dill-0.4.1-py3-none-any.whl (120 kB)
+Collecting einops==0.8.2 (from -r /workspace/requirements.lock.txt (line 23))
+  Downloading einops-0.8.2-py3-none-any.whl (65 kB)
+Collecting et_xmlfile==2.0.0 (from -r /workspace/requirements.lock.txt (line 24))
+  Downloading et_xmlfile-2.0.0-py3-none-any.whl (18 kB)
+Requirement already satisfied: execnet==2.1.2 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 25)) (2.1.2)
+Collecting expecttest==0.3.0 (from -r /workspace/requirements.lock.txt (line 26))
+  Downloading expecttest-0.3.0-py3-none-any.whl (8.2 kB)
+Collecting filelock==3.29.1 (from -r /workspace/requirements.lock.txt (line 27))
+  Downloading filelock-3.29.1-py3-none-any.whl (40 kB)
+Collecting frozenlist==1.8.0 (from -r /workspace/requirements.lock.txt (line 28))
+  Downloading frozenlist-1.8.0-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (233 kB)
+Collecting fsspec==2026.2.0 (from -r /workspace/requirements.lock.txt (line 29))
+  Downloading fsspec-2026.2.0-py3-none-any.whl.metadata (10 kB)
+Collecting ftfy==6.3.1 (from -r /workspace/requirements.lock.txt (line 30))
+  Downloading ftfy-6.3.1-py3-none-any.whl (44 kB)
+Collecting gpytorch==1.15.2 (from -r /workspace/requirements.lock.txt (line 31))
+  Downloading gpytorch-1.15.2-py3-none-any.whl (291 kB)
+Collecting greenlet==3.5.1 (from -r /workspace/requirements.lock.txt (line 32))
+  Downloading greenlet-3.5.1-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl (603 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 603.5/603.5 kB 59.2 MB/s  0:00:00
+Collecting h11==0.16.0 (from -r /workspace/requirements.lock.txt (line 33))
+  Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Collecting hatch-vcs==0.5.0 (from -r /workspace/requirements.lock.txt (line 34))
+  Downloading hatch_vcs-0.5.0-py3-none-any.whl (8.5 kB)
+Collecting hatchling==1.29.0 (from -r /workspace/requirements.lock.txt (line 35))
+  Downloading hatchling-1.29.0-py3-none-any.whl (76 kB)
+Collecting hf-xet==1.5.0 (from -r /workspace/requirements.lock.txt (line 36))
+  Downloading hf_xet-1.5.0-cp37-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 93.0 MB/s  0:00:00
+Collecting httpcore==1.0.9 (from -r /workspace/requirements.lock.txt (line 37))
+  Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+Collecting httpx==0.28.1 (from -r /workspace/requirements.lock.txt (line 38))
+  Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+Collecting huggingface_hub==1.17.0 (from -r /workspace/requirements.lock.txt (line 39))
+  Downloading huggingface_hub-1.17.0-py3-none-any.whl (671 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 671.5/671.5 kB 1.4 MB/s  0:00:00
+Collecting idna==3.18 (from -r /workspace/requirements.lock.txt (line 40))
+  Downloading idna-3.18-py3-none-any.whl (65 kB)
+Collecting ImageIO==2.37.3 (from -r /workspace/requirements.lock.txt (line 41))
+  Downloading imageio-2.37.3-py3-none-any.whl (317 kB)
+Collecting imageio-ffmpeg==0.6.0 (from -r /workspace/requirements.lock.txt (line 42))
+  Downloading imageio_ffmpeg-0.6.0-py3-none-manylinux2014_aarch64.whl (25.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 25.6/25.6 MB 92.8 MB/s  0:00:00
+Collecting importlib_metadata==9.0.0 (from -r /workspace/requirements.lock.txt (line 43))
+  Downloading importlib_metadata-9.0.0-py3-none-any.whl (27 kB)
+Requirement already satisfied: iniconfig==2.3.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 44)) (2.3.0)
+Collecting jaxtyping==0.3.10 (from -r /workspace/requirements.lock.txt (line 45))
+  Downloading jaxtyping-0.3.10-py3-none-any.whl (56 kB)
+Requirement already satisfied: Jinja2==3.1.6 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 46)) (3.1.6)
+Collecting joblib==1.5.3 (from -r /workspace/requirements.lock.txt (line 47))
+  Downloading joblib-1.5.3-py3-none-any.whl (309 kB)
+Collecting jsonargparse==4.49.0 (from -r /workspace/requirements.lock.txt (line 48))
+  Downloading jsonargparse-4.49.0-py3-none-any.whl (134 kB)
+Collecting linear_operator==0.6.1 (from -r /workspace/requirements.lock.txt (line 49))
+  Downloading linear_operator-0.6.1-py3-none-any.whl (174 kB)
+Collecting linkify-it-py==2.1.0 (from -r /workspace/requirements.lock.txt (line 50))
+  Downloading linkify_it_py-2.1.0-py3-none-any.whl (19 kB)
+Collecting markdown-it-py==4.2.0 (from -r /workspace/requirements.lock.txt (line 51))
+  Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+Requirement already satisfied: MarkupSafe==3.0.3 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 52)) (3.0.3)
+Collecting mbridge==0.15.1 (from -r /workspace/requirements.lock.txt (line 53))
+  Downloading mbridge-0.15.1-py3-none-any.whl (122 kB)
+Collecting mdit-py-plugins==0.6.1 (from -r /workspace/requirements.lock.txt (line 54))
+  Downloading mdit_py_plugins-0.6.1-py3-none-any.whl (66 kB)
+Collecting mdurl==0.1.2 (from -r /workspace/requirements.lock.txt (line 55))
+  Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Collecting ml_dtypes==0.5.4 (from -r /workspace/requirements.lock.txt (line 56))
+  Downloading ml_dtypes-0.5.4-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (5.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.1/5.1 MB 93.4 MB/s  0:00:00
+Collecting modelscope==1.37.1 (from -r /workspace/requirements.lock.txt (line 57))
+  Downloading modelscope-1.37.1-py3-none-any.whl (6.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.1/6.1 MB 95.8 MB/s  0:00:00
+Requirement already satisfied: mpmath==1.3.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 58)) (1.3.0)
+Collecting multidict==6.7.1 (from -r /workspace/requirements.lock.txt (line 59))
+  Downloading multidict-6.7.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (246 kB)
+Collecting multiprocess==0.70.19 (from -r /workspace/requirements.lock.txt (line 60))
+  Downloading multiprocess-0.70.19-py311-none-any.whl (144 kB)
+Collecting nanobind==2.12.0 (from -r /workspace/requirements.lock.txt (line 61))
+  Downloading nanobind-2.12.0-py3-none-any.whl (249 kB)
+Collecting narwhals==2.22.0 (from -r /workspace/requirements.lock.txt (line 62))
+  Downloading narwhals-2.22.0-py3-none-any.whl (453 kB)
+Requirement already satisfied: networkx==3.6.1 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 63)) (3.6.1)
+Collecting ninja==1.13.0 (from -r /workspace/requirements.lock.txt (line 64))
+  Downloading ninja-1.13.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (177 kB)
+Collecting nputop==0.0.3 (from -r /workspace/requirements.lock.txt (line 65))
+  Downloading nputop-0.0.3-py3-none-any.whl (9.0 kB)
+Collecting numpy==2.4.6 (from -r /workspace/requirements.lock.txt (line 66))
+  Downloading numpy-2.4.6-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (16.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.0/16.0 MB 97.0 MB/s  0:00:00
+Collecting openpyxl==3.1.5 (from -r /workspace/requirements.lock.txt (line 67))
+  Downloading openpyxl-3.1.5-py2.py3-none-any.whl (250 kB)
+Collecting orjson==3.11.9 (from -r /workspace/requirements.lock.txt (line 68))
+  Downloading orjson-3.11.9-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (132 kB)
+Requirement already satisfied: packaging==26.2 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 69)) (26.2)
+Requirement already satisfied: pandas==3.0.3 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 70)) (3.0.3)
+Collecting pathspec==1.1.1 (from -r /workspace/requirements.lock.txt (line 71))
+  Downloading pathspec-1.1.1-py3-none-any.whl (57 kB)
+Collecting peft==0.19.1 (from -r /workspace/requirements.lock.txt (line 72))
+  Downloading peft-0.19.1-py3-none-any.whl (680 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 680.7/680.7 kB 57.5 MB/s  0:00:00
+Collecting pillow==12.2.0 (from -r /workspace/requirements.lock.txt (line 73))
+  Downloading pillow-12.2.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl.metadata (8.8 kB)
+Collecting platformdirs==4.10.0 (from -r /workspace/requirements.lock.txt (line 74))
+  Downloading platformdirs-4.10.0-py3-none-any.whl (22 kB)
+Requirement already satisfied: pluggy==1.6.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 75)) (1.6.0)
+Collecting portalocker==3.2.0 (from -r /workspace/requirements.lock.txt (line 76))
+  Downloading portalocker-3.2.0-py3-none-any.whl (22 kB)
+Collecting propcache==0.5.2 (from -r /workspace/requirements.lock.txt (line 77))
+  Downloading propcache-0.5.2-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (57 kB)
+Collecting protobuf==7.35.0 (from -r /workspace/requirements.lock.txt (line 78))
+  Downloading protobuf-7.35.0-cp310-abi3-manylinux2014_aarch64.whl (328 kB)
+Collecting psutil==7.2.2 (from -r /workspace/requirements.lock.txt (line 79))
+  Downloading psutil-7.2.2-cp36-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (156 kB)
+Collecting pyarrow==24.0.0 (from -r /workspace/requirements.lock.txt (line 80))
+  Downloading pyarrow-24.0.0-cp311-cp311-manylinux_2_28_aarch64.whl (45.7 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.7/45.7 MB 85.5 MB/s  0:00:00
+Requirement already satisfied: pybind11==3.0.4 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 81)) (3.0.4)
+Collecting pydantic==2.13.4 (from -r /workspace/requirements.lock.txt (line 82))
+  Downloading pydantic-2.13.4-py3-none-any.whl (472 kB)
+Collecting pydantic_core==2.46.4 (from -r /workspace/requirements.lock.txt (line 83))
+  Downloading pydantic_core-2.46.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (2.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 90.3 MB/s  0:00:00
+Collecting Pygments==2.20.0 (from -r /workspace/requirements.lock.txt (line 84))
+  Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 85.1 MB/s  0:00:00
+Requirement already satisfied: pytest==8.3.2 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 85)) (8.3.2)
+Requirement already satisfied: pytest-xdist==3.6.1 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 86)) (3.6.1)
+Requirement already satisfied: python-dateutil==2.9.0.post0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 87)) (2.9.0.post0)
+Requirement already satisfied: PyYAML==6.0.3 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 88)) (6.0.3)
+Collecting regex==2026.5.9 (from -r /workspace/requirements.lock.txt (line 89))
+  Downloading regex-2026.5.9-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (792 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 792.3/792.3 kB 72.7 MB/s  0:00:00
+Collecting requests==2.34.2 (from -r /workspace/requirements.lock.txt (line 90))
+  Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+Collecting rich==15.0.0 (from -r /workspace/requirements.lock.txt (line 91))
+  Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+Collecting safetensors==0.7.0 (from -r /workspace/requirements.lock.txt (line 92))
+  Downloading safetensors-0.7.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (491 kB)
+Collecting scikit-learn==1.9.0 (from -r /workspace/requirements.lock.txt (line 93))
+  Downloading scikit_learn-1.9.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (9.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.0/9.0 MB 95.9 MB/s  0:00:00
+Collecting scipy==1.17.1 (from -r /workspace/requirements.lock.txt (line 94))
+  Downloading scipy-1.17.1-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (33.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 33.1/33.1 MB 98.4 MB/s  0:00:00
+Collecting setuptools-scm==10.0.5 (from -r /workspace/requirements.lock.txt (line 95))
+  Downloading setuptools_scm-10.0.5-py3-none-any.whl (21 kB)
+Collecting shellingham==1.5.4 (from -r /workspace/requirements.lock.txt (line 96))
+  Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+Requirement already satisfied: six==1.17.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 97)) (1.17.0)
+Collecting soupsieve==2.8.4 (from -r /workspace/requirements.lock.txt (line 98))
+  Downloading soupsieve-2.8.4-py3-none-any.whl (37 kB)
+Collecting SQLAlchemy==2.0.50 (from -r /workspace/requirements.lock.txt (line 99))
+  Downloading sqlalchemy-2.0.50-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (3.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 93.8 MB/s  0:00:00
+Requirement already satisfied: sympy==1.14.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 100)) (1.14.0)
+Collecting textual==8.2.7 (from -r /workspace/requirements.lock.txt (line 101))
+  Downloading textual-8.2.7-py3-none-any.whl (731 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 731.1/731.1 kB 71.5 MB/s  0:00:00
+Collecting threadpoolctl==3.6.0 (from -r /workspace/requirements.lock.txt (line 102))
+  Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+Collecting timm==1.0.27 (from -r /workspace/requirements.lock.txt (line 103))
+  Downloading timm-1.0.27-py3-none-any.whl (2.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.6/2.6 MB 93.3 MB/s  0:00:00
+Collecting tokenizers==0.22.2 (from -r /workspace/requirements.lock.txt (line 104))
+  Downloading tokenizers-0.22.2-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (3.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 94.3 MB/s  0:00:00
+Requirement already satisfied: torch==2.10.0+cpu in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 105)) (2.10.0+cpu)
+Requirement already satisfied: torch_npu==2.10.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 106)) (2.10.0)
+Collecting torchdata==0.11.0 (from -r /workspace/requirements.lock.txt (line 107))
+  Downloading torchdata-0.11.0-py3-none-any.whl (61 kB)
+Collecting torchvision==0.25.0 (from -r /workspace/requirements.lock.txt (line 108))
+  Downloading torchvision-0.25.0%2Bcpu-cp311-cp311-manylinux_2_28_aarch64.whl.metadata (5.4 kB)
+Collecting tqdm==4.67.3 (from -r /workspace/requirements.lock.txt (line 109))
+  Downloading tqdm-4.67.3-py3-none-any.whl (78 kB)
+Requirement already satisfied: triton==3.5.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 110)) (3.5.0)
+Requirement already satisfied: triton_ascend==3.2.1 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 111)) (3.2.1)
+Collecting trove-classifiers==2026.5.22.10 (from -r /workspace/requirements.lock.txt (line 112))
+  Downloading trove_classifiers-2026.5.22.10-py3-none-any.whl (14 kB)
+Collecting typer==0.25.1 (from -r /workspace/requirements.lock.txt (line 113))
+  Downloading typer-0.25.1-py3-none-any.whl (58 kB)
+Collecting typing-inspection==0.4.2 (from -r /workspace/requirements.lock.txt (line 114))
+  Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Requirement already satisfied: typing_extensions==4.15.0 in /usr/local/lib/python3.11/site-packages (from -r /workspace/requirements.lock.txt (line 115)) (4.15.0)
+Collecting uc-micro-py==2.0.0 (from -r /workspace/requirements.lock.txt (line 116))
+  Downloading uc_micro_py-2.0.0-py3-none-any.whl (6.4 kB)
+Collecting urllib3==2.7.0 (from -r /workspace/requirements.lock.txt (line 117))
+  Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)
+Collecting vcs-versioning==1.1.1 (from -r /workspace/requirements.lock.txt (line 118))
+  Downloading vcs_versioning-1.1.1-py3-none-any.whl (79 kB)
+Collecting wcwidth==0.7.0 (from -r /workspace/requirements.lock.txt (line 119))
+  Downloading wcwidth-0.7.0-py3-none-any.whl (110 kB)
+Collecting xlsxwriter==3.2.9 (from -r /workspace/requirements.lock.txt (line 120))
+  Downloading xlsxwriter-3.2.9-py3-none-any.whl (175 kB)
+Collecting xxhash==3.7.0 (from -r /workspace/requirements.lock.txt (line 121))
+  Downloading xxhash-3.7.0-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (213 kB)
+Collecting yarl==1.24.2 (from -r /workspace/requirements.lock.txt (line 122))
+  Downloading yarl-1.24.2-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (105 kB)
+Collecting zipp==4.1.0 (from -r /workspace/requirements.lock.txt (line 123))
+  Downloading zipp-4.1.0-py3-none-any.whl (10 kB)
+Downloading fsspec-2026.2.0-py3-none-any.whl (202 kB)
+Downloading pillow-12.2.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (6.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.4/6.4 MB 24.5 MB/s  0:00:00
+Downloading torchvision-0.25.0%2Bcpu-cp311-cp311-manylinux_2_28_aarch64.whl (2.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 16.8 MB/s  0:00:00
+Installing collected packages: trove-classifiers, nputop, nanobind, cmake, bs4, zipp, yarl, xxhash, xlsxwriter, wcwidth, vcs-versioning, urllib3, uc-micro-py, typing-inspection, typer, tqdm, torchvision, torchdata, tokenizers, timm, threadpoolctl, textual, SQLAlchemy, soupsieve, shellingham, setuptools-scm, scipy, scikit-learn, safetensors, rich, requests, regex, Pygments, pydantic_core, pydantic, pyarrow, psutil, protobuf, propcache, portalocker, platformdirs, pillow, peft, pathspec, orjson, openpyxl, numpy, ninja, narwhals, multiprocess, multidict, modelscope, ml_dtypes, mdurl, mdit-py-plugins, mbridge, markdown-it-py, linkify-it-py, linear_operator, jsonargparse, joblib, jaxtyping, importlib_metadata, imageio-ffmpeg, ImageIO, idna, huggingface_hub, httpx, httpcore, hf-xet, hatchling, hatch-vcs, h11, greenlet, gpytorch, ftfy, fsspec, frozenlist, filelock, expecttest, et_xmlfile, einops, dill, diffusers, decorator, debugpy, datasets, click, charset-normalizer, certifi, beautifulsoup4, beartype, av, attrs, asyncpg, anyio, annotated-types, annotated-doc, aiosignal, aiohttp, aiohappyeyeballs, accelerate
+  Attempting uninstall: scipy
+    Found existing installation: scipy 1.13.1
+    Uninstalling scipy-1.13.1:
+      Successfully uninstalled scipy-1.13.1
+  Attempting uninstall: psutil
+    Found existing installation: psutil 6.0.0
+    Uninstalling psutil-6.0.0:
+      Successfully uninstalled psutil-6.0.0
+  Attempting uninstall: numpy
+    Found existing installation: numpy 1.26.4
+    Uninstalling numpy-1.26.4:
+      Successfully uninstalled numpy-1.26.4
+  Attempting uninstall: fsspec
+    Found existing installation: fsspec 2026.4.0
+    Uninstalling fsspec-2026.4.0:
+      Successfully uninstalled fsspec-2026.4.0
+  Attempting uninstall: filelock
+    Found existing installation: filelock 3.29.0
+    Uninstalling filelock-3.29.0:
+      Successfully uninstalled filelock-3.29.0
+  Attempting uninstall: decorator
+    Found existing installation: decorator 5.1.1
+    Uninstalling decorator-5.1.1:
+      Successfully uninstalled decorator-5.1.1
+  Attempting uninstall: attrs
+    Found existing installation: attrs 24.2.0
+    Uninstalling attrs-24.2.0:
+      Successfully uninstalled attrs-24.2.0
+
+Successfully installed ImageIO-2.37.3 Pygments-2.20.0 SQLAlchemy-2.0.50 accelerate-1.13.0 aiohappyeyeballs-2.6.2 aiohttp-3.14.0 aiosignal-1.4.0 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 asyncpg-0.31.0 attrs-26.1.0 av-17.0.1 beartype-0.22.9 beautifulsoup4-4.14.3 bs4-0.0.2 certifi-2026.5.20 charset-normalizer-3.4.7 click-8.4.1 cmake-3.28.4 datasets-4.8.5 debugpy-1.8.20 decorator-5.3.1 diffusers-0.37.1 dill-0.4.1 einops-0.8.2 et_xmlfile-2.0.0 expecttest-0.3.0 filelock-3.29.1 frozenlist-1.8.0 fsspec-2026.2.0 ftfy-6.3.1 gpytorch-1.15.2 greenlet-3.5.1 h11-0.16.0 hatch-vcs-0.5.0 hatchling-1.29.0 hf-xet-1.5.0 httpcore-1.0.9 httpx-0.28.1 huggingface_hub-1.17.0 idna-3.18 imageio-ffmpeg-0.6.0 importlib_metadata-9.0.0 jaxtyping-0.3.10 joblib-1.5.3 jsonargparse-4.49.0 linear_operator-0.6.1 linkify-it-py-2.1.0 markdown-it-py-4.2.0 mbridge-0.15.1 mdit-py-plugins-0.6.1 mdurl-0.1.2 ml_dtypes-0.5.4 modelscope-1.37.1 multidict-6.7.1 multiprocess-0.70.19 nanobind-2.12.0 narwhals-2.22.0 ninja-1.13.0 nputop-0.0.3 numpy-2.4.6 openpyxl-3.1.5 orjson-3.11.9 pathspec-1.1.1 peft-0.19.1 pillow-12.2.0 platformdirs-4.10.0 portalocker-3.2.0 propcache-0.5.2 protobuf-7.35.0 psutil-7.2.2 pyarrow-24.0.0 pydantic-2.13.4 pydantic_core-2.46.4 regex-2026.5.9 requests-2.34.2 rich-15.0.0 safetensors-0.7.0 scikit-learn-1.9.0 scipy-1.17.1 setuptools-scm-10.0.5 shellingham-1.5.4 soupsieve-2.8.4 textual-8.2.7 threadpoolctl-3.6.0 timm-1.0.27 tokenizers-0.22.2 torchdata-0.11.0 torchvision-0.25.0+cpu tqdm-4.67.3 trove-classifiers-2026.5.22.10 typer-0.25.1 typing-inspection-0.4.2 uc-micro-py-2.0.0 urllib3-2.7.0 vcs-versioning-1.1.1 wcwidth-0.7.0 xlsxwriter-3.2.9 xxhash-3.7.0 yarl-1.24.2 zipp-4.1.0
+Removing intermediate container 2225e1232519
+ ---> 36f5f3639691
+Step 24/37 : RUN set -ex;     python -m pip install --no-deps --no-build-isolation         "transformers @ git+https://github.com/huggingface/transformers.git@${TRANSFORMERS_COMMIT}"
+ ---> Running in 6f263562d214
+[91m+ python -m pip install --no-deps --no-build-isolation 'transformers @ git+https://github.com/huggingface/transformers.git@94246e689c03551bd97624d436de4c7e2d937063'
+[0mLooking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting transformers @ git+https://github.com/huggingface/transformers.git@94246e689c03551bd97624d436de4c7e2d937063
+  Cloning https://github.com/huggingface/transformers.git (to revision 94246e689c03551bd97624d436de4c7e2d937063) to /tmp/pip-install-cp2t1_45/transformers_c86dd5b03de041a0a0510132385f7536
+[91m  Running command git clone --filter=blob:none --quiet https://github.com/huggingface/transformers.git /tmp/pip-install-cp2t1_45/transformers_c86dd5b03de041a0a0510132385f7536
+[0m[91m  Running command git rev-parse -q --verify 'sha^94246e689c03551bd97624d436de4c7e2d937063'
+[0m[91m  Running command git fetch -q https://github.com/huggingface/transformers.git 94246e689c03551bd97624d436de4c7e2d937063
+[0m[91m  Running command git checkout -q 94246e689c03551bd97624d436de4c7e2d937063
+[0m  Resolved https://github.com/huggingface/transformers.git to commit 94246e689c03551bd97624d436de4c7e2d937063
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: transformers
+  Building wheel for transformers (pyproject.toml): started
+  Building wheel for transformers (pyproject.toml): finished with status 'done'
+  Created wheel for transformers: filename=transformers-5.10.0.dev0-py3-none-any.whl size=12163135 sha256=06e62058726bd55799aa6fb158b18b750dd137b4c301b8667a2758a899709e18
+  Stored in directory: /root/.cache/pip/wheels/05/d7/86/8ff71bf0daf5eddb9cdaf684bd5ee2c32226c97da7c7bd65d4
+Successfully built transformers
+Installing collected packages: transformers
+Successfully installed transformers-5.10.0.dev0
+Removing intermediate container 6f263562d214
+ ---> 516bb268a95b
+Step 25/37 : RUN set -ex; source /etc/profile.d/ascend-cann.sh || true;     git clone "${MINDSPEED_REPO}" /workspace/MindSpeed;     git -C /workspace/MindSpeed checkout --detach "${MINDSPEED_COMMIT}";     python -m pip install -e /workspace/MindSpeed --no-deps
+ ---> Running in 65ad545eebf0
+[91m+ source /etc/profile.d/ascend-cann.sh
+[0m[91m++ '[' -f /usr/local/Ascend/cann/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/cann/set_env.sh
+[0m[91m+++ setenv_main
+[0m[91m+++ local version_dirpath install_dirpath my_ld_library_path my_path driver_install_path_param dep_hal_path
++++ local dep_hal_name=libascend_hal.so
++++ local dep_info_file=/etc/ascend_install.info
++++ local is_install_driver=n
++++ local architecture remove_regex
++++ version_dirpath=/usr/local/Ascend/cann-9.0.0
+[0m[91m++++ dirname /usr/local/Ascend/cann-9.0.0
+[0m[91m+++ install_dirpath=/usr/local/Ascend
++++ remove_regex='^/usr/local/Ascend/cann[/_-]'
++++ remove_env PATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=PATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PATH}'
+[0m[91m+++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ read -r PATH
+[0m[91m++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PATH
+[0m[91m+++ remove_env LD_LIBRARY_PATH '^/usr/local/Ascend/cann[/_-]'
++++ local name=LD_LIBRARY_PATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
++++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
++++ read -r LD_LIBRARY_PATH
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export LD_LIBRARY_PATH
++++ remove_env PYTHONPATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=PYTHONPATH
+[0m[91m+++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PYTHONPATH}'
++++++ echo
+[0m[91m+++ local env_value=
++++ read -r PYTHONPATH
+[0m[91m++++ echo ''
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PYTHONPATH
++++ my_ld_library_path=/usr/local/mpich/lib:
+[0m[91m+++ '[' '!' -z /usr/local/mpich/lib: ']'
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : ' '
+[0m[91m+++ my_ld_library_path='/usr/local/mpich/lib '
++++ for my_path in ${my_ld_library_path}
+[0m[91m+++ echo /usr/local/mpich/lib
+[0m[91m+++ grep -q driver
+[0m[91m+++ '[' -f /etc/ascend_install.info ']'
+[0m[91m+++ case ":$PATH:" in
++++ command -v ldconfig
+[0m[91m+++ ldconfig -p
+[0m[91m+++ grep -q -- libascend_hal.so
+[0m[91m+++ command -v arch
+[0m[91m++++ arch
+[0m[91m+++ architecture=aarch64
+[0m[91m+++ prepend_env PATH /usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
++++ local name=PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
+[0m[91m++++ eval echo '${PATH}'
+[0m[91m+++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ '[' /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin = '' ']'
+[0m[91m+++ read -r PATH
+[0m[91m+++ export PATH
+[0m[91m+++ prepend_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
++++ local name=LD_LIBRARY_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
++++ '[' /usr/local/mpich/lib: = '' ']'
++++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ '[' n = n ']'
++++ append_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m+++ local name=LD_LIBRARY_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
++++ '[' /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib: = '' ']'
+[0m[91m+++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
++++ ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
++++ export ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
++++ export TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
++++ TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
+[0m[91m+++ export ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
++++ export ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
++++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/lib64/cmake
++++ local name=CMAKE_PREFIX_PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo
+[0m[91m+++ local env_value=
+[0m[91m+++ '[' '' = '' ']'
++++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m+++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
++++ local name=CMAKE_PREFIX_PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ '[' /usr/local/Ascend/cann-9.0.0/lib64/cmake = '' ']'
++++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m++ '[' -f /usr/local/Ascend/nnal/atb/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m+++ set_env_path=/usr/local/Ascend/nnal/atb/set_env.sh
++++ [[ -n '' ]]
+[0m[91m+++ [[ -f /usr/local/Ascend/nnal/atb/set_env.sh ]]
++++ [[ /usr/local/Ascend/nnal/atb/set_env.sh =~ (^|/)set_env\.sh$ ]]
+[0m[91m+++++ dirname /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m++++ cd /usr/local/Ascend/nnal/atb
+[0m[91m++++ pwd
+[0m[91m+++ atb_path=/usr/local/Ascend/nnal/atb
+[0m[91m+++ get_cxx_abi_option
+[0m[91m+++ cxx_abi=
++++ [[ -z '' ]]
++++ [[ '' == '' ]]
+[0m[91m++++ python3 -c 'import torch'
+[0m[91m+++ res=
++++ [[ '' == \t\o\r\c\h\_\n\o\t\_\e\x\i\s\t ]]
+[0m[91m++++ python3 -c 'import torch; print(torch.compiled_with_cxx11_abi())'
+[0m[91mcan not use command: npu-smi info
+[0m[91m+++ [[ True == \T\r\u\e ]]
++++ cxx_abi=1
+[0m[91m+++ export ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
++++ ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
++++ export LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ export PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ export ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ export ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
++++ export ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ export ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ export ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
++++ ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
++++ export ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
++++ ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
++++ export ATB_COMPARE_TILING_EVERY_KERNEL=0
++++ ATB_COMPARE_TILING_EVERY_KERNEL=0
++++ export ATB_SHARE_MEMORY_NAME_SUFFIX=
++++ ATB_SHARE_MEMORY_NAME_SUFFIX=
++++ export ATB_MATMUL_SHUFFLE_K_ENABLE=1
++++ ATB_MATMUL_SHUFFLE_K_ENABLE=1
++++ export LCCL_DETERMINISTIC=0
++++ LCCL_DETERMINISTIC=0
++++ export LCCL_PARALLEL=0
++++ LCCL_PARALLEL=0
++ git clone https://gitcode.com/Ascend/MindSpeed.git /workspace/MindSpeed
+[0m[91mCloning into '/workspace/MindSpeed'...
+[0m[91m+ git -C /workspace/MindSpeed checkout --detach 5753d412882317b113e08103a2b0b7155345096a
+[0m[91mHEAD is now at 5753d412 Fix: fp8_reuse_quantized_weight for VeRL ref model
+[0m[91m+ python -m pip install -e /workspace/MindSpeed --no-deps
+[0mLooking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Obtaining file:///workspace/MindSpeed
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: mindspeed
+  Building editable for mindspeed (pyproject.toml): started
+  Building editable for mindspeed (pyproject.toml): finished with status 'done'
+  Created wheel for mindspeed: filename=mindspeed-0.12.1-0.editable-py3-none-any.whl size=14918 sha256=02f8793913a2170c0b81e48f8a60624b89f9cd957f529c9bfad9a519cd2180b4
+  Stored in directory: /tmp/pip-ephem-wheel-cache-gb9oubod/wheels/bf/0e/15/e20def010678d5d0c7cd04ceef52c839a3797eb17fbea95638
+Successfully built mindspeed
+Installing collected packages: mindspeed
+Successfully installed mindspeed-0.12.1
+Removing intermediate container 65ad545eebf0
+ ---> f73702c552bc
+Step 26/37 : COPY patches/mindspeed_mm_qwen36_sft.patch /workspace/mindspeed_mm_qwen36_sft.patch
+ ---> a04dfcf9b906
+Step 27/37 : RUN set -ex; source /etc/profile.d/ascend-cann.sh || true;     git clone "${MINDSPEED_MM_REPO}" /workspace/MindSpeed-MM;     git -C /workspace/MindSpeed-MM checkout --detach "${MINDSPEED_MM_COMMIT}";     git -C /workspace/MindSpeed-MM apply --check /workspace/mindspeed_mm_qwen36_sft.patch;     git -C /workspace/MindSpeed-MM apply --whitespace=nowarn /workspace/mindspeed_mm_qwen36_sft.patch;     python -m pip install -e /workspace/MindSpeed-MM --no-deps
+ ---> Running in ad73deac0f5a
+[91m+ source /etc/profile.d/ascend-cann.sh
+[0m[91m++ '[' -f /usr/local/Ascend/cann/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/cann/set_env.sh
+[0m[91m+++ setenv_main
+[0m[91m+++ local version_dirpath install_dirpath my_ld_library_path my_path driver_install_path_param dep_hal_path
++++ local dep_hal_name=libascend_hal.so
++++ local dep_info_file=/etc/ascend_install.info
++++ local is_install_driver=n
++++ local architecture remove_regex
++++ version_dirpath=/usr/local/Ascend/cann-9.0.0
+[0m[91m++++ dirname /usr/local/Ascend/cann-9.0.0
+[0m[91m+++ install_dirpath=/usr/local/Ascend
++++ remove_regex='^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ remove_env PATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=PATH
+[0m[91m+++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PATH}'
+[0m[91m+++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ read -r PATH
+[0m[91m++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PATH
+[0m[91m+++ remove_env LD_LIBRARY_PATH '^/usr/local/Ascend/cann[/_-]'
++++ local name=LD_LIBRARY_PATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
++++ read -r LD_LIBRARY_PATH
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ remove_env PYTHONPATH '^/usr/local/Ascend/cann[/_-]'
++++ local name=PYTHONPATH
+[0m[91m+++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PYTHONPATH}'
+[0m[91m+++++ echo
+[0m[91m+++ local env_value=
+[0m[91m+++ read -r PYTHONPATH
+[0m[91m++++ echo ''
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PYTHONPATH
+[0m[91m+++ my_ld_library_path=/usr/local/mpich/lib:
++++ '[' '!' -z /usr/local/mpich/lib: ']'
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : ' '
+[0m[91m+++ my_ld_library_path='/usr/local/mpich/lib '
+[0m[91m+++ for my_path in ${my_ld_library_path}
+[0m[91m+++ echo /usr/local/mpich/lib
+[0m[91m+++ grep -q driver
+[0m[91m+++ '[' -f /etc/ascend_install.info ']'
+[0m[91m+++ case ":$PATH:" in
++++ command -v ldconfig
+[0m[91m+++ ldconfig -p
+[0m[91m+++ grep -q -- libascend_hal.so
+[0m[91m+++ command -v arch
+[0m[91m++++ arch
+[0m[91m+++ architecture=aarch64
+[0m[91m+++ prepend_env PATH /usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
++++ local name=PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
+[0m[91m++++ eval echo '${PATH}'
++++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ '[' /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin = '' ']'
++++ read -r PATH
+[0m[91m+++ export PATH
+[0m[91m+++ prepend_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
++++ local name=LD_LIBRARY_PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
+[0m[91m+++ '[' /usr/local/mpich/lib: = '' ']'
++++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ '[' n = n ']'
++++ append_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m+++ local name=LD_LIBRARY_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
++++ '[' /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib: = '' ']'
++++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
++++ ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
++++ export ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
+[0m[91m+++ export TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
++++ TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
++++ export ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
++++ export ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
++++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ local name=CMAKE_PREFIX_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo
+[0m[91m+++ local env_value=
++++ '[' '' = '' ']'
+[0m[91m+++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m+++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
++++ local name=CMAKE_PREFIX_PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
++++ '[' /usr/local/Ascend/cann-9.0.0/lib64/cmake = '' ']'
++++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m++ '[' -f /usr/local/Ascend/nnal/atb/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m+++ set_env_path=/usr/local/Ascend/nnal/atb/set_env.sh
++++ [[ -n '' ]]
+[0m[91m+++ [[ -f /usr/local/Ascend/nnal/atb/set_env.sh ]]
++++ [[ /usr/local/Ascend/nnal/atb/set_env.sh =~ (^|/)set_env\.sh$ ]]
+[0m[91m+++++ dirname /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m++++ cd /usr/local/Ascend/nnal/atb
+[0m[91m++++ pwd
+[0m[91m+++ atb_path=/usr/local/Ascend/nnal/atb
+[0m[91m+++ get_cxx_abi_option
+[0m[91m+++ cxx_abi=
++++ [[ -z '' ]]
++++ [[ '' == '' ]]
+[0m[91m++++ python3 -c 'import torch'
+[0m[91m+++ res=
++++ [[ '' == \t\o\r\c\h\_\n\o\t\_\e\x\i\s\t ]]
+[0m[91m++++ python3 -c 'import torch; print(torch.compiled_with_cxx11_abi())'
+[0m[91mcan not use command: npu-smi info
+[0m[91m+++ [[ True == \T\r\u\e ]]
++++ cxx_abi=1
+[0m[91m+++ export ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
++++ ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
++++ export LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ export PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ export ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ export ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
++++ export ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ export ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ export ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
++++ ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
++++ export ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
++++ ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
+[0m[91m+++ export ATB_COMPARE_TILING_EVERY_KERNEL=0
++++ ATB_COMPARE_TILING_EVERY_KERNEL=0
++++ export ATB_SHARE_MEMORY_NAME_SUFFIX=
++++ ATB_SHARE_MEMORY_NAME_SUFFIX=
++++ export ATB_MATMUL_SHUFFLE_K_ENABLE=1
++++ ATB_MATMUL_SHUFFLE_K_ENABLE=1
++++ export LCCL_DETERMINISTIC=0
++++ LCCL_DETERMINISTIC=0
+[0m[91m+++ export LCCL_PARALLEL=0
++++ LCCL_PARALLEL=0
+[0m[91m+ git clone https://github.com/Ascend/MindSpeed-MM.git /workspace/MindSpeed-MM
+[0m[91mCloning into '/workspace/MindSpeed-MM'...
+[0m[91m+ git -C /workspace/MindSpeed-MM checkout --detach cd34547968d9de915b826f1cba9e05d27153167b
+[0m[91mHEAD is now at cd345479 [Bugfix] fp8: fix mindspeed commit id dependency
+[0m[91m+ git -C /workspace/MindSpeed-MM apply --check /workspace/mindspeed_mm_qwen36_sft.patch
+[0m[91m+ git -C /workspace/MindSpeed-MM apply --whitespace=nowarn /workspace/mindspeed_mm_qwen36_sft.patch
+[0m[91m+ python -m pip install -e /workspace/MindSpeed-MM --no-deps
+[0mLooking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Obtaining file:///workspace/MindSpeed-MM
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: mindspeed-mm
+  Building editable for mindspeed-mm (pyproject.toml): started
+  Building editable for mindspeed-mm (pyproject.toml): finished with status 'done'
+  Created wheel for mindspeed-mm: filename=mindspeed_mm-0.1-0.editable-py3-none-any.whl size=30332 sha256=858a4e072687ff01ba2b2ed150896ad0010dbf648fa05f70384efc28bec43840
+  Stored in directory: /tmp/pip-ephem-wheel-cache-ygjywx8d/wheels/61/81/7c/f1529346f1198b8a71a0bc2024fc146cbd8d55a0076ab41783
+Successfully built mindspeed-mm
+Installing collected packages: mindspeed-mm
+Successfully installed mindspeed-mm-0.1
+Removing intermediate container ad73deac0f5a
+ ---> 558d9e73862c
+Step 28/37 : COPY pkgs/ /workspace/fla-prebuilt/
+ ---> 64c74f788093
+Step 29/37 : RUN set -ex; source /etc/profile.d/ascend-cann.sh;     if [ "${FLA_BUILD_MODE}" = "prebuilt" ]; then         echo ">>> FLA prebuilt mode: installing validated .run + .whl";         bash /workspace/fla-prebuilt/fla-npu-fla_npu_linux-aarch64.run --quiet --install-for-all;         python -m pip install --no-deps --force-reinstall             /workspace/fla-prebuilt/fla_npu-1.0.0-cp311-cp311-linux_aarch64.whl;     else         echo ">>> FLA source mode: clone @${FLA_COMMIT} and build";         git clone "${FLA_REPO}" /workspace/flash-linear-attention-npu;         git -C /workspace/flash-linear-attention-npu checkout --detach "${FLA_COMMIT}";         cd /workspace/flash-linear-attention-npu;         bash build.sh --pkg --soc="${FLA_SOC}";         run_pkg="$(ls build_out/*.run)";         bash "${run_pkg}" --quiet --install-for-all;         cd torch_custom/fla_npu; bash build.sh;     fi;     test -d "${CANN_HOME}/opp/vendors/fla_npu_transformer";     python -m pip show fla_npu >/dev/null
+ ---> Running in 07ea8ff6f1cb
+[91m+ source /etc/profile.d/ascend-cann.sh
+[0m[91m++ '[' -f /usr/local/Ascend/cann/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/cann/set_env.sh
+[0m[91m+++ setenv_main
+[0m[91m+++ local version_dirpath install_dirpath my_ld_library_path my_path driver_install_path_param dep_hal_path
++++ local dep_hal_name=libascend_hal.so
++++ local dep_info_file=/etc/ascend_install.info
++++ local is_install_driver=n
++++ local architecture remove_regex
++++ version_dirpath=/usr/local/Ascend/cann-9.0.0
+[0m[91m++++ dirname /usr/local/Ascend/cann-9.0.0
+[0m[91m+++ install_dirpath=/usr/local/Ascend
++++ remove_regex='^/usr/local/Ascend/cann[/_-]'
++++ remove_env PATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=PATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PATH}'
+[0m[91m+++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ read -r PATH
+[0m[91m++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PATH
+[0m[91m+++ remove_env LD_LIBRARY_PATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=LD_LIBRARY_PATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
+[0m[91m+++ read -r LD_LIBRARY_PATH
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ remove_env PYTHONPATH '^/usr/local/Ascend/cann[/_-]'
+[0m[91m+++ local name=PYTHONPATH
++++ local 'regex=^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ eval echo '${PYTHONPATH}'
+[0m[91m+++++ echo
+[0m[91m+++ local env_value=
+[0m[91m+++ read -r PYTHONPATH
+[0m[91m++++ echo ''
+[0m[91m++++ tr : '\n'
+[0m[91m++++ grep -v -E '^/usr/local/Ascend/cann[/_-]'
+[0m[91m++++ tr '\n' :
+[0m[91m++++ sed 's/:$//'
+[0m[91m+++ export PYTHONPATH
+[0m[91m+++ my_ld_library_path=/usr/local/mpich/lib:
++++ '[' '!' -z /usr/local/mpich/lib: ']'
+[0m[91m++++ echo /usr/local/mpich/lib:
+[0m[91m++++ tr : ' '
+[0m[91m+++ my_ld_library_path='/usr/local/mpich/lib '
+[0m[91m+++ for my_path in ${my_ld_library_path}
+[0m[91m+++ echo /usr/local/mpich/lib
+[0m[91m+++ grep -q driver
+[0m[91m+++ '[' -f /etc/ascend_install.info ']'
+[0m[91m+++ case ":$PATH:" in
+[0m[91m+++ command -v ldconfig
+[0m[91m+++ ldconfig -p
+[0m[91m+++ grep -q -- libascend_hal.so
+[0m[91m+++ command -v arch
+[0m[91m++++ arch
+[0m[91m+++ architecture=aarch64
+[0m[91m+++ prepend_env PATH /usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
++++ local name=PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump
+[0m[91m++++ eval echo '${PATH}'
+[0m[91m+++++ echo /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ local env_value=/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[0m[91m+++ '[' /usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin = '' ']'
++++ read -r PATH
+[0m[91m+++ export PATH
+[0m[91m+++ prepend_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
+[0m[91m+++ local name=LD_LIBRARY_PATH
+[0m[91m+++ local value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/mpich/lib:
+[0m[91m+++ '[' /usr/local/mpich/lib: = '' ']'
++++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ PYTHONPATH=/usr/local/Ascend/cann-9.0.0/python/site-packages:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe:
++++ '[' n = n ']'
+[0m[91m+++ append_env LD_LIBRARY_PATH /usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m+++ local name=LD_LIBRARY_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/devlib
+[0m[91m++++ eval echo '${LD_LIBRARY_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib:
+[0m[91m+++ '[' /usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib: = '' ']'
++++ read -r LD_LIBRARY_PATH
+[0m[91m+++ export LD_LIBRARY_PATH
+[0m[91m+++ export ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
++++ ASCEND_OPP_PATH=/usr/local/Ascend/cann-9.0.0/opp
+[0m[91m+++ export ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_AICPU_PATH=/usr/local/Ascend/cann-9.0.0
++++ export TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
++++ TOOLCHAIN_HOME=/usr/local/Ascend/cann-9.0.0/toolkit
+[0m[91m+++ export ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_HOME_PATH=/usr/local/Ascend/cann-9.0.0
++++ export ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
++++ ASCEND_TOOLKIT_HOME=/usr/local/Ascend/cann-9.0.0
++++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ local name=CMAKE_PREFIX_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo
+[0m[91m+++ local env_value=
+[0m[91m+++ '[' '' = '' ']'
++++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m+++ prepend_env CMAKE_PREFIX_PATH /usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
+[0m[91m+++ local name=CMAKE_PREFIX_PATH
++++ local value=/usr/local/Ascend/cann-9.0.0/toolkit/tools/tikicpulib/lib/cmake
+[0m[91m++++ eval echo '${CMAKE_PREFIX_PATH}'
+[0m[91m+++++ echo /usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ local env_value=/usr/local/Ascend/cann-9.0.0/lib64/cmake
+[0m[91m+++ '[' /usr/local/Ascend/cann-9.0.0/lib64/cmake = '' ']'
++++ read -r CMAKE_PREFIX_PATH
+[0m[91m+++ export CMAKE_PREFIX_PATH
+[0m[91m++ '[' -f /usr/local/Ascend/nnal/atb/set_env.sh ']'
+[0m[91m++ . /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m+++ set_env_path=/usr/local/Ascend/nnal/atb/set_env.sh
++++ [[ -n '' ]]
+[0m[91m+++ [[ -f /usr/local/Ascend/nnal/atb/set_env.sh ]]
++++ [[ /usr/local/Ascend/nnal/atb/set_env.sh =~ (^|/)set_env\.sh$ ]]
+[0m[91m+++++ dirname /usr/local/Ascend/nnal/atb/set_env.sh
+[0m[91m++++ cd /usr/local/Ascend/nnal/atb
+[0m[91m++++ pwd
+[0m[91m+++ atb_path=/usr/local/Ascend/nnal/atb
+[0m[91m+++ get_cxx_abi_option
+[0m[91m+++ cxx_abi=
++++ [[ -z '' ]]
+[0m[91m+++ [[ '' == '' ]]
+[0m[91m++++ python3 -c 'import torch'
+[0m[91m+++ res=
++++ [[ '' == \t\o\r\c\h\_\n\o\t\_\e\x\i\s\t ]]
+[0m[91m++++ python3 -c 'import torch; print(torch.compiled_with_cxx11_abi())'
+[0m[91mcan not use command: npu-smi info
+[0m[91m+++ [[ True == \T\r\u\e ]]
++++ cxx_abi=1
+[0m[91m+++ export ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
++++ ATB_HOME_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1
+[0m[91m+++ export LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ LD_LIBRARY_PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/lib:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/examples:/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/tests/atbopstest:/usr/local/Ascend/cann-9.0.0/lib64:/usr/local/Ascend/cann-9.0.0/lib64/plugin/opskernel:/usr/local/Ascend/cann-9.0.0/lib64/plugin/nnengine:/usr/local/Ascend/cann-9.0.0/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/mpich/lib::/usr/local/Ascend/cann-9.0.0/devlib
++++ export PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ PATH=/usr/local/Ascend/nnal/atb/latest/atb/cxx_abi_1/bin:/usr/local/Ascend/cann-9.0.0/bin:/usr/local/Ascend/cann-9.0.0/tools/ccec_compiler/bin:/usr/local/Ascend/cann-9.0.0/tools/profiler/bin:/usr/local/Ascend/cann-9.0.0/tools/ascend_system_advisor/asys:/usr/local/Ascend/cann-9.0.0/tools/show_kernel_debug_data:/usr/local/Ascend/cann-9.0.0/tools/msobjdump:/usr/local/mpich/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
++++ export ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_KERNEL_ENABLE=0
++++ export ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_RUNNER_ENABLE=0
+[0m[91m+++ export ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ ATB_STREAM_SYNC_EVERY_OPERATION_ENABLE=0
++++ export ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ ATB_OPSRUNNER_KERNEL_CACHE_LOCAL_COUNT=1
++++ export ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
++++ ATB_OPSRUNNER_KERNEL_CACHE_GLOABL_COUNT=5
+[0m[91m+++ export ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
++++ ATB_WORKSPACE_MEM_ALLOC_ALG_TYPE=1
++++ export ATB_COMPARE_TILING_EVERY_KERNEL=0
++++ ATB_COMPARE_TILING_EVERY_KERNEL=0
+[0m[91m+++ export ATB_SHARE_MEMORY_NAME_SUFFIX=
++++ ATB_SHARE_MEMORY_NAME_SUFFIX=
+[0m[91m+++ export ATB_MATMUL_SHUFFLE_K_ENABLE=1
+[0m[91m+++ ATB_MATMUL_SHUFFLE_K_ENABLE=1
++++ export LCCL_DETERMINISTIC=0
++++ LCCL_DETERMINISTIC=0
+[0m[91m+++ export LCCL_PARALLEL=0
++++ LCCL_PARALLEL=0
+[0m[91m+ '[' prebuilt = prebuilt ']'
++ echo '>>> FLA prebuilt mode: installing validated .run + .whl'
+[0m[91m+ bash /workspace/fla-prebuilt/fla-npu-fla_npu_linux-aarch64.run --quiet --install-for-all
+[0m>>> FLA prebuilt mode: installing validated .run + .whl
+[ops_custom] [2026-06-07 05:43:33] [INFO] create /usr/local/Ascend/cann-9.0.0/opp/vendors/fla_npu_transformer.
+[ops_custom] [2026-06-07 05:43:33] [INFO] upgrade framework
+[ops_custom] [2026-06-07 05:43:33] [INFO] no need to upgrade ops framework files
+[ops_custom] [2026-06-07 05:43:33] [INFO] upgrade op proto
+[ops_custom] [2026-06-07 05:43:33] [INFO] create /usr/local/Ascend/cann-9.0.0/opp/vendors/fla_npu_transformer/op_proto.
+[ops_custom] [2026-06-07 05:43:33] [INFO] copy new ops op_proto files ......
+[ops_custom] [2026-06-07 05:43:33] [INFO] upgrade op impl
+[ops_custom] [2026-06-07 05:43:33] [INFO] create /usr/local/Ascend/cann-9.0.0/opp/vendors/fla_npu_transformer/op_impl.
+[ops_custom] [2026-06-07 05:43:33] [INFO] copy new ops op_impl files ......
+[ops_custom] [2026-06-07 05:43:33] [INFO] upgrade op api
+[ops_custom] [2026-06-07 05:43:33] [INFO] create /usr/local/Ascend/cann-9.0.0/opp/vendors/fla_npu_transformer/op_api.
+[ops_custom] [2026-06-07 05:43:33] [INFO] copy new ops op_api files ......
+[ops_custom] [2026-06-07 05:43:33] [INFO] upgrade uninstall
+[ops_custom] [2026-06-07 05:43:33] [INFO] copy new uninstall.sh files ......
+[ops_custom] [2026-06-07 05:43:33] [INFO] upgrade version.info
+[ops_custom] [2026-06-07 05:43:33] [INFO] copy new version.info files ......
+[ops_custom] [2026-06-07 05:43:33] [INFO] no need to upgrade custom.proto files
+[ops_custom] [2026-06-07 05:43:33] [INFO] using requirements: when custom module install finished or before you run the custom module, execute the command [ export LD_LIBRARY_PATH=/usr/local/Ascend/cann-9.0.0/opp/vendors/fla_npu_transformer/op_api/lib/:${LD_LIBRARY_PATH} ] to set the environment path
+SUCCESS
+[91m+ python -m pip install --no-deps --force-reinstall /workspace/fla-prebuilt/fla_npu-1.0.0-cp311-cp311-linux_aarch64.whl
+[0mLooking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Processing ./fla-prebuilt/fla_npu-1.0.0-cp311-cp311-linux_aarch64.whl
+Installing collected packages: fla-npu
+Successfully installed fla-npu-1.0.0
+[91m+ test -d /usr/local/Ascend/cann-9.0.0/opp/vendors/fla_npu_transformer
++ python -m pip show fla_npu
+[0mRemoving intermediate container 07ea8ff6f1cb
+ ---> cfea3b6a54d3
+Step 30/37 : ENV TASK_QUEUE_ENABLE=0     MULTI_STREAM_MEMORY_REUSE=2     NON_MEGATRON=true     ASCEND_LAUNCH_BLOCKING=0     ACLNN_CACHE_LIMIT=100000     CPU_AFFINITY_CONF=1     PYTORCH_NPU_ALLOC_CONF=expandable_segments:True     HCCL_CONNECT_TIMEOUT=7200     HCCL_EXEC_TIMEOUT=7200
+ ---> Running in 68de614590ff
+Removing intermediate container 68de614590ff
+ ---> 5fbdae067a5f
+Step 31/37 : ENV LD_LIBRARY_PATH=${FLA_VENDOR_LIB}:${LD_LIBRARY_PATH}
+ ---> Running in 913d9543da68
+Removing intermediate container 913d9543da68
+ ---> 9a881772c7f7
+Step 32/37 : ENV http_proxy= https_proxy= no_proxy= HTTP_PROXY= HTTPS_PROXY= NO_PROXY=
+ ---> Running in e7a3e449924a
+Removing intermediate container e7a3e449924a
+ ---> 9791b4db2eb0
+Step 33/37 : COPY entrypoint.sh /workspace/entrypoint.sh
+ ---> 6bc0be409844
+Step 34/37 : RUN dos2unix /workspace/entrypoint.sh 2>/dev/null || true; chmod +x /workspace/entrypoint.sh
+ ---> Running in dc1a6c9099d6
+Removing intermediate container dc1a6c9099d6
+ ---> b486e19bc1ff
+Step 35/37 : WORKDIR /workspace/MindSpeed-MM
+ ---> Running in 4f21d675bd4d
+Removing intermediate container 4f21d675bd4d
+ ---> 5e063c801fac
+Step 36/37 : ENTRYPOINT ["/workspace/entrypoint.sh"]
+ ---> Running in 5583de57164e
+Removing intermediate container 5583de57164e
+ ---> 375443d83449
+Step 37/37 : CMD ["bash"]
+ ---> Running in eb185cd79840
+Removing intermediate container eb185cd79840
+ ---> 4ab28f79fcfe
+Successfully built 4ab28f79fcfe
+Successfully tagged qwen36sft:latest
++ echo BUILD_EXIT_CODE=0
+BUILD_EXIT_CODE=0
