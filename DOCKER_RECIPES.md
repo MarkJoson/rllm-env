@@ -90,6 +90,35 @@ docker buildx build \
   dev-framework
 ```
 
+```
+docker  build \
+--platform=linux/amd64 \
+--add-host=host.docker.internal:host-gateway \
+-f dev-sft/Dockerfile \
+-t ascend-cann900-x86_64-huawei:sft \
+--build-arg BASE_IMAGE=ascend-cann900-x86_64-huawei:base \
+--build-arg HTTP_PROXY=http://host.docker.internal:18080 \
+--build-arg HTTPS_PROXY=http://host.docker.internal:18080 \
+--build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com \
+--build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com \
+--build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com \
+--build-arg APT_INSECURE=1 \
+--build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian \
+--build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple \
+--build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com \
+--build-arg CANN_ARCH=x86_64 \
+--build-arg CANN_CHIP=910b \
+--build-arg CANN_VERSION=9.0.0 \
+--build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run \
+--build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run \
+--build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run \
+--build-arg TORCH_VERSION=2.10 \
+--build-arg TORCH_NPU_VERSION=2.10 \
+--build-arg TRITON_ASCEND_VERSION=3.2.1 \
+dev-sft
+```
+
+
 ## 2. 无代理 + 清华源 + CANN 9.0.0
 
 这个 recipe 显式清空代理,并使用清华 Debian/Docker/PyPI 源。下面以当前仓库已有的 `aarch64` CANN 包为例;如果要构建 `x86_64`,把 `--platform` 和 `CANN_ARCH` 改成 `linux/amd64`、`x86_64`,并放入对应安装包。
