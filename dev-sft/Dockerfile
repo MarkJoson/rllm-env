@@ -130,6 +130,17 @@ RUN set -ex; source /etc/profile.d/ascend-cann.sh; \
     python -m pip show fla_npu >/dev/null
 
 # -----------------------------------------------------------------------------
+# 5b) system deps for multi-node SFT. dev-sft is FROM dev-base (skips dev-framework),
+#     so add the framework's training-relevant system packages — openssh-server
+#     (entrypoint.sh starts sshd on :8022 for inter-node launch) + numactl/jemalloc.
+#     Placed late on purpose: editing it won't bust the cached pip/clone layers above.
+# -----------------------------------------------------------------------------
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends \
+        openssh-server numactl libnuma-dev libjemalloc2; \
+    rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
 # 6) runtime env — the validated config.
 #    TASK_QUEUE_ENABLE=0 is the AscendC-GDN NaN fix (async task-queue race);
 #    the vendor op_api/lib must be on LD_LIBRARY_PATH for the custom ops to load.
@@ -147,6 +158,12 @@ ENV LD_LIBRARY_PATH=${FLA_VENDOR_LIB}:${LD_LIBRARY_PATH}
 
 # scrub build-time proxy so it never leaks into the running container
 ENV http_proxy= https_proxy= no_proxy= HTTP_PROXY= HTTPS_PROXY= NO_PROXY=
+
+# SSH keys/config for multi-node inter-node login (mirrors dev-framework). Intranet
+# cluster keys are committed in docker/.ssh/ (project decision: internal-only network).
+# chmod is required or ssh refuses to use id_rsa.
+COPY .ssh /root/.ssh
+RUN chmod 700 /root/.ssh || true; chmod 600 /root/.ssh/* || true
 
 COPY entrypoint.sh /workspace/entrypoint.sh
 RUN dos2unix /workspace/entrypoint.sh 2>/dev/null || true; chmod +x /workspace/entrypoint.sh
