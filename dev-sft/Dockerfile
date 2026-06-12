@@ -101,7 +101,7 @@ RUN set -ex; source /etc/profile.d/ascend-cann.sh || true; \
 # -----------------------------------------------------------------------------
 RUN set -ex; source /etc/profile.d/ascend-cann.sh || true; \
     git clone "${MINDSPEED_MM_REPO}" /workspace/MindSpeed-MM; \
-    git -C /workspace/MindSpeed-MM checkout --detach "${MINDSPEED_MM_REF}"; \
+    git -C /workspace/MindSpeed-MM checkout "${MINDSPEED_MM_REF}"; \
     python -m pip install -e /workspace/MindSpeed-MM --no-deps
 
 # -----------------------------------------------------------------------------
