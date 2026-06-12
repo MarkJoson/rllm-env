@@ -53,7 +53,7 @@ docker buildx build \
   --build-arg BASE_IMAGE=python:3.11-bookworm \
   --build-arg HTTP_PROXY=http://host.docker.internal:18080 \
   --build-arg HTTPS_PROXY=http://host.docker.internal:18080 \
-  --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com,download.pytorch.org,download-r2.pytorch.org,triton-ascend.osinfra.cn \
+  --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com \
   --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com \
   --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com \
   --build-arg APT_INSECURE=1 \
@@ -246,4 +246,10 @@ docker run -it \
 --build-arg INSTALL_VERL=0
 --build-arg INSTALL_RLLM=0
 --build-arg INSTALL_KERNELGYM=0
+```
+```
+docker buildx build   --platform=linux/amd64   --add-host=host.docker.internal:host-gateway --network host  -f dev-base/Dockerfile   -t ascend-cann900-x86_64-huawei:base   --build-arg BASE_IMAGE=python:3.11-bookworm   --build-arg HTTP_PROXY=http://127.0.0.1:18080   --build-arg HTTPS_PROXY=http://127.0.0.1:18080   --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com   --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com   --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com   --build-arg APT_INSECURE=1   --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian   --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple   --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com   --build-arg CANN_ARCH=x86_64   --build-arg CANN_CHIP=910b   --build-arg CANN_VERSION=9.0.0   --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run   --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run   --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run   --build-arg TORCH_VERSION=2.10   --build-arg TORCH_NPU_VERSION=2.10   --build-arg TRITON_ASCEND_VERSION=3.2.1   --load   dev-base
+
+docker  build --platform=linux/amd64 --add-host=host.docker.internal:host-gateway -f dev-sft/Dockerfile -t ascend-cann900-x86_64-huawei:sft --build-arg BASE_IMAGE=ascend-cann900-x86_64-huawei:base --network host --build-arg HTTP_PROXY=http://127.0.0.1:18080 --build-arg HTTPS_PROXY=http://127.0.0.1:18080 --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com --build-arg APT_INSECURE=1 --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com --build-arg CANN_ARCH=x86_64 --build-arg CANN_CHIP=910b --build-arg CANN_VERSION=9.0.0 --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run --build-arg TORCH_VERSION=2.10 --build-arg TORCH_NPU_VERSION=2.10 --build-arg TRITON_ASCEND_VERSION=3.2.1 dev-sft
+
 ```

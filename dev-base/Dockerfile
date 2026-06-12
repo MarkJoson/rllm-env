@@ -59,10 +59,13 @@ ENV LANG=en_US.UTF-8 \
     no_proxy=${NO_PROXY} \
     HTTP_PROXY=${HTTP_PROXY} \
     HTTPS_PROXY=${HTTPS_PROXY} \
-    NO_PROXY=${NO_PROXY}
+    NO_PROXY=${NO_PROXY} \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
+    CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
  
 WORKDIR /workspace
- 
+
+RUN cat /etc/apt/sources.list.d/debian.sources 
 # --- apt mirror rewrite (edits persisted files, no mount needed) -------------
 RUN set -eux; \
     if [ -f /etc/apt/sources.list ]; then \
@@ -98,10 +101,13 @@ RUN set -eux; \
     printf '%s\n' 'Acquire::AllowInsecureRepositories=true;' >> /etc/apt/apt.conf.d/98insecure; \
     printf '%s\n' 'Acquire::AllowDowngradeToInsecureRepositories=true;' >> /etc/apt/apt.conf.d/98insecure; \
     cat /etc/apt/apt.conf.d/99proxy
- 
+
+# 安装公司的勾八证书
+COPY install_ca.sh /tmp/
+RUN bash /tmp/install_ca.sh
+
 # --- base packages (cache mounts; keep downloaded debs + lists in cache) -----
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
     set -eux; \
     rm -f /etc/apt/apt.conf.d/docker-clean; \
     apt-get update; \
@@ -190,11 +196,6 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
  
-COPY certs /usr/local/share/ca-certificates
- 
-RUN set -eux; \
-    update-ca-certificates || true
- 
 # --- Docker CE CLI / buildx / compose ----------------------------------------
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -233,7 +234,6 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
 # --- CANN install via bind mount (runfiles stay out of the image layers) -----
 # Build context must contain a `cann/` directory with the .run files.
 RUN --mount=type=bind,source=cann,target=/tmp/cann \
-    set -eux; \
     cann_arch="${CANN_ARCH}"; \
     if [ -z "${cann_arch}" ]; then \
         case "${TARGETARCH}" in \
@@ -354,3 +354,4 @@ RUN source /etc/profile.d/ascend-cann.sh; \
     cd "${INSTALL_DIR}/tools/hccl_test"; \
     make MPI_HOME=/usr/local/mpich ASCEND_DIR="${INSTALL_DIR}"
 
+ENTRYPOINT ["/usr/bin/bash"]
