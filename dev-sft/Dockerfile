@@ -8,7 +8,7 @@
 #
 # Reproduces the *validated* cluster env (ssh npu) bit-for-bit:
 #   - same git commits (pinned below), same pinned pip closure (requirements.lock.txt)
-#   - the GDN step-time patch applied to MindSpeed-MM
+#   - the Qwen3.6 SFT changes via the MarkJoson/MindSpeed-MM fork branch (qwen36-sft)
 #   - the fla_npu AscendC vendor ops + torch_custom wheel
 #   - the runtime env that fixes the AscendC NaN (TASK_QUEUE_ENABLE=0) and wires
 #     the vendor op_api lib onto LD_LIBRARY_PATH
@@ -45,8 +45,10 @@ ENV http_proxy=${HTTP_PROXY} \
 # ---- pinned sources: git remote + commit id (exactly what runs on the cluster) ----
 ARG MINDSPEED_REPO=https://gitcode.com/Ascend/MindSpeed.git
 ARG MINDSPEED_COMMIT=5753d412882317b113e08103a2b0b7155345096a
-ARG MINDSPEED_MM_REPO=https://github.com/Ascend/MindSpeed-MM.git
-ARG MINDSPEED_MM_COMMIT=cd34547968d9de915b826f1cba9e05d27153167b
+ARG MINDSPEED_MM_REPO=https://github.com/MarkJoson/MindSpeed-MM.git
+# branch (or pin a commit SHA for exact reproduction) carrying the Qwen3.6 SFT changes,
+# synced from the validated NPU env on top of upstream cd34547. See FORK.md.
+ARG MINDSPEED_MM_REF=qwen36-sft
 ARG TRANSFORMERS_COMMIT=94246e689c03551bd97624d436de4c7e2d937063
 ARG FLA_REPO=https://github.com/flashserve/flash-linear-attention-npu.git
 ARG FLA_COMMIT=eabe36b5cda0799a1672c9fc7c24cabbf12c463e
@@ -92,15 +94,14 @@ RUN set -ex; source /etc/profile.d/ascend-cann.sh || true; \
     python -m pip install -e /workspace/MindSpeed --no-deps
 
 # -----------------------------------------------------------------------------
-# 4) MindSpeed-MM (github @commit) + GDN step-time patch — editable.
-#    This is the repo trainer.py is launched from.
+# 4) MindSpeed-MM — clone the FORK at the qwen36-sft ref. The branch already carries all
+#    Qwen3.6 SFT changes (GDN single-step opt + MoE create_causal_mask fix + fused CE),
+#    synced from the validated NPU env on top of upstream cd34547. No patch step.
+#    This is the repo trainer.py is launched from. editable.
 # -----------------------------------------------------------------------------
-COPY patches/mindspeed_mm_qwen36_sft.patch /workspace/mindspeed_mm_qwen36_sft.patch
 RUN set -ex; source /etc/profile.d/ascend-cann.sh || true; \
     git clone "${MINDSPEED_MM_REPO}" /workspace/MindSpeed-MM; \
-    git -C /workspace/MindSpeed-MM checkout --detach "${MINDSPEED_MM_COMMIT}"; \
-    git -C /workspace/MindSpeed-MM apply --check /workspace/mindspeed_mm_qwen36_sft.patch; \
-    git -C /workspace/MindSpeed-MM apply --whitespace=nowarn /workspace/mindspeed_mm_qwen36_sft.patch; \
+    git -C /workspace/MindSpeed-MM checkout --detach "${MINDSPEED_MM_REF}"; \
     python -m pip install -e /workspace/MindSpeed-MM --no-deps
 
 # -----------------------------------------------------------------------------
