@@ -40,82 +40,92 @@ Ascend-cann-nnal_9.0.0_linux-x86_64.run
 >   export DOCKER_API_VERSION="$(docker version --format '{{.Server.APIVersion}}')"
 >   ```
 
-## 1. x86_64 + Huawei 代理 + CANN 9.0.0 + 全部包
+## 1. Huawei 代理 + CANN 9.0.0
 
-这个 recipe 构建完整环境:先构建 `base`,再构建带全部本地源码包的 `framework`。
-
+### 1.1  x86_64 A2X机器
 ```bash
 docker buildx build \
-  --platform=linux/amd64 \
-  --add-host=host.docker.internal:host-gateway \
-  -f dev-base/Dockerfile \
-  -t ascend-cann900-x86_64-huawei:base \
-  --build-arg BASE_IMAGE=python:3.11-bookworm \
-  --build-arg HTTP_PROXY=http://host.docker.internal:18080 \
-  --build-arg HTTPS_PROXY=http://host.docker.internal:18080 \
-  --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com \
-  --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com \
-  --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com \
-  --build-arg APT_INSECURE=1 \
-  --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian \
-  --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple \
-  --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com \
-  --build-arg CANN_ARCH=x86_64 \
-  --build-arg CANN_CHIP=910b \
-  --build-arg CANN_VERSION=9.0.0 \
-  --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run \
-  --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run \
-  --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run \
-  --build-arg TORCH_VERSION=2.10 \
-  --build-arg TORCH_NPU_VERSION=2.10 \
-  --build-arg TRITON_ASCEND_VERSION=3.2.1 \
-  --load \
-  dev-base
-```
-
-```bash
-docker buildx build \
-  --platform=linux/amd64 \
-  --add-host=host.docker.internal:host-gateway \
-  -f dev-framework/Dockerfile \
-  -t ascend-cann900-x86_64-huawei:framework \
-  --build-arg BASE_IMAGE=ascend-cann900-x86_64-huawei:base \
-  --build-arg INSTALL_VLLM=1 \
-  --build-arg INSTALL_VLLM_ASCEND=1 \
-  --build-arg INSTALL_MEGATRON_MINDSPEED=1 \
-  --build-arg INSTALL_VERL=1 \
-  --build-arg INSTALL_RLLM=1 \
-  --build-arg INSTALL_KERNELGYM=1 \
-  --load \
-  dev-framework
-```
-
-```
+    --platform=linux/amd64 \
+    --add-host=host.docker.internal:host-gateway --network host  -f dev-base/Dockerfile \
+    -t ascend-cann900-x86_64-huawei:base \
+    --build-arg BASE_IMAGE=python:3.11-bookworm \
+    --build-arg HTTP_PROXY=http://127.0.0.1:18080 \
+    --build-arg HTTPS_PROXY=http://127.0.0.1:18080 \
+    --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com \
+    --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com \
+    --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com \
+    --build-arg APT_INSECURE=1 \
+    --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian \
+    --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple \
+    --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com \
+    --build-arg CANN_ARCH=x86_64 \
+    --build-arg CANN_CHIP=910b \
+    --build-arg CANN_VERSION=9.0.0 \
+    --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run \
+    --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run \
+    --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run \
+    --build-arg TORCH_VERSION=2.10 \
+    --build-arg TORCH_NPU_VERSION=2.10 \
+    --build-arg TRITON_ASCEND_VERSION=3.2.1 \
+    --load \
+    dev-base
+  
 docker  build \
---platform=linux/amd64 \
---add-host=host.docker.internal:host-gateway \
--f dev-sft/Dockerfile \
--t ascend-cann900-x86_64-huawei:sft \
---build-arg BASE_IMAGE=ascend-cann900-x86_64-huawei:base \
---build-arg HTTP_PROXY=http://host.docker.internal:18080 \
---build-arg HTTPS_PROXY=http://host.docker.internal:18080 \
---build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com \
---build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com \
---build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com \
---build-arg APT_INSECURE=1 \
---build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian \
---build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple \
---build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com \
---build-arg CANN_ARCH=x86_64 \
---build-arg CANN_CHIP=910b \
---build-arg CANN_VERSION=9.0.0 \
---build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run \
---build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run \
---build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run \
---build-arg TORCH_VERSION=2.10 \
---build-arg TORCH_NPU_VERSION=2.10 \
---build-arg TRITON_ASCEND_VERSION=3.2.1 \
-dev-sft
+    --platform=linux/amd64 \
+    --add-host=host.docker.internal:host-gateway \
+    -f dev-sft/Dockerfile \
+    -t ascend-cann900-x86_64-huawei:sft \
+    --build-arg BASE_IMAGE=ascend-cann900-x86_64-huawei:base \
+    --network host \
+    --build-arg HTTP_PROXY=http://127.0.0.1:18080 \
+    --build-arg HTTPS_PROXY=http://127.0.0.1:18080 \
+    --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com \
+    --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com \
+    --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com \
+    --build-arg APT_INSECURE=1 \
+    --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian \
+    --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple \
+    --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com \
+    --build-arg CANN_ARCH=x86_64 \
+    --build-arg CANN_CHIP=910b \
+    --build-arg CANN_VERSION=9.0.0 \
+    --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run \
+    --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run \
+    --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run \
+    --build-arg TORCH_VERSION=2.10 \
+    --build-arg TORCH_NPU_VERSION=2.10 \
+    --build-arg TRITON_ASCEND_VERSION=3.2.1 \
+    dev-sft
+```
+
+### 1.2 arm64 + A3 机器
+```bash
+docker buildx build \
+    --platform=linux/aarch64 \
+    --add-host=host.docker.internal:host-gateway --network host \
+    -f dev-base/Dockerfile \
+    -t ascend-cann900-aarch64-huawei:base \
+    --build-arg BASE_IMAGE=python:3.11-bookworm \
+    --build-arg HTTP_PROXY=http://127.0.0.1:18080 \
+    --build-arg HTTPS_PROXY=http://127.0.0.1:18080 \
+    --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com \
+    --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com \
+    --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com \
+    --build-arg APT_INSECURE=1 \
+    --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian \
+    --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple \
+    --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com \
+    --build-arg CANN_ARCH=aarch64 \
+    --build-arg CANN_CHIP=910b \
+    --build-arg CANN_VERSION=9.0.0 \
+    --build-arg CANN_RUNFILE=Ascend-cann-toolkit_9.0.0_linux-aarch64.run \
+    --build-arg CANN_OPS_RUNFILE=Ascend-cann-A3-ops_9.0.0_linux-aarch64.run \
+    --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-aarch64.run \
+    --build-arg TORCH_VERSION=2.10 \
+    --build-arg TORCH_NPU_VERSION=2.10 \
+    --build-arg TRITON_ASCEND_VERSION=3.2.1 \
+    --load \
+    dev-base
 ```
 
 
@@ -168,56 +178,6 @@ docker buildx build \
   dev-framework
 ```
 
-## 3. 无代理 + 清华源 + CANN 8.5.2
-
-`8.5.2` 复用无代理和清华源配置。当前旧版 Dockerfile 里 `8.5.2` 用过 `triton-ascend 3.2.0`,这里也固定到 `3.2.0`,避免和旧环境产生不必要差异。
-
-```bash
-docker buildx build \
-  --platform=linux/arm64 \
-  -f dev-base/Dockerfile \
-  -t ascend-cann852-aarch64-tuna:base \
-  --build-arg BASE_IMAGE=python:3.11-bookworm \
-  --build-arg HTTP_PROXY= \
-  --build-arg HTTPS_PROXY= \
-  --build-arg NO_PROXY= \
-  --build-arg DEBIAN_MIRROR_HOST=mirrors.tuna.tsinghua.edu.cn \
-  --build-arg APT_DIRECT_HOSTS= \
-  --build-arg APT_INSECURE=0 \
-  --build-arg DOCKER_APT_BASE=https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/debian \
-  --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
-  --build-arg PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn \
-  --build-arg CANN_ARCH=aarch64 \
-  --build-arg CANN_CHIP=910b \
-  --build-arg CANN_VERSION=8.5.2 \
-  --build-arg CANN_RUNFILE=Ascend-cann-toolkit_8.5.2_linux-aarch64.run \
-  --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_8.5.2_linux-aarch64.run \
-  --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_8.5.2_linux-aarch64.run \
-  --build-arg TORCH_VERSION=2.10 \
-  --build-arg TORCH_NPU_VERSION=2.10 \
-  --build-arg TRITON_ASCEND_VERSION=3.2.0 \
-  --load \
-  dev-base
-```
-
-如需安装全部 framework 包:
-
-```bash
-docker buildx build \
-  --platform=linux/arm64 \
-  -f dev-framework/Dockerfile \
-  -t ascend-cann852-aarch64-tuna:framework \
-  --build-arg BASE_IMAGE=ascend-cann852-aarch64-tuna:base \
-  --build-arg INSTALL_VLLM=1 \
-  --build-arg INSTALL_VLLM_ASCEND=1 \
-  --build-arg INSTALL_MEGATRON_MINDSPEED=1 \
-  --build-arg INSTALL_VERL=1 \
-  --build-arg INSTALL_RLLM=1 \
-  --build-arg INSTALL_KERNELGYM=1 \
-  --load \
-  dev-framework
-```
-
 ## 运行容器
 
 如果只是快速进入完整 framework 镜像,可以用下面模板。镜像名替换为上面构建出的 `*:framework`。
@@ -237,6 +197,55 @@ docker run -it \
   -v /var/run/docker.sock:/var/run/docker.sock \
   ascend-cann900-aarch64-tuna:framework \
   bash
+
+docker run -it \
+  --name ascend-verl \
+  --net=host \
+  --ipc=host \
+  --shm-size=768g \
+  --privileged \
+  -v /dev:/dev \
+  -v /home/g00841271:/home/g00841271 \
+  -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
+  -v /mnt/pipeline-data:/mnt/pipeline-data \
+  -v /usr/local/dcmi:/usr/local/dcmi:ro \
+  -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi:ro \
+  -v /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/ \
+  -v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  ascend-cann900-dev:framework bash
+
+docker run -it \
+  --name pastenv_validate \
+  --net=host \
+  --ipc=host \
+  --shm-size=768g \
+  --privileged \
+  --device=/dev/davinci1 \
+  --device=/dev/davinci2 \
+  --device=/dev/davinci3 \
+  --device=/dev/davinci4 \
+  --device=/dev/davinci5 \
+  --device=/dev/davinci6 \
+  --device=/dev/davinci7 \
+  --device=/dev/davinci8 \
+  --device=/dev/davinci9 \
+  --device=/dev/davinci10 \
+  --device=/dev/davinci11 \
+  --device=/dev/davinci12 \
+  --device=/dev/davinci13 \
+  --device=/dev/davinci14 \
+  --device=/dev/davinci15 \
+  --device=/dev/davinci_manager \
+  --device=/dev/devmm_svm \
+  --device=/dev/hisi_hdc \
+  -v /home/g00841271_v2:/home/g00841271 \
+  -v /mnt/pipeline-data:/mnt/pipeline-data \
+  -v /usr/local/dcmi:/usr/local/dcmi:ro \
+  -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi:ro \
+  -v /usr/local/Ascend/driver:/usr/local/Ascend/driver \
+  -v /usr/local/Ascend/firmware:/usr/local/Ascend/firmware \
+  rllm_cbx_base:v1.0 bash
 ```
 
 如果不想安装全部 framework 包,把对应开关改成 `0` 即可,例如只保留 `vllm` 和 `vllm-ascend`:
@@ -246,15 +255,4 @@ docker run -it \
 --build-arg INSTALL_VERL=0
 --build-arg INSTALL_RLLM=0
 --build-arg INSTALL_KERNELGYM=0
-```
-```
-docker buildx build   --platform=linux/amd64   --add-host=host.docker.internal:host-gateway --network host  -f dev-base/Dockerfile   -t ascend-cann900-x86_64-huawei:base   --build-arg BASE_IMAGE=python:3.11-bookworm   --build-arg HTTP_PROXY=http://127.0.0.1:18080   --build-arg HTTPS_PROXY=http://127.0.0.1:18080   --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com   --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com   --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com   --build-arg APT_INSECURE=1   --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian   --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple   --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com   --build-arg CANN_ARCH=x86_64   --build-arg CANN_CHIP=910b   --build-arg CANN_VERSION=9.0.0   --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run   --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run   --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run   --build-arg TORCH_VERSION=2.10   --build-arg TORCH_NPU_VERSION=2.10   --build-arg TRITON_ASCEND_VERSION=3.2.1   --load   dev-base
-
-docker  build --platform=linux/amd64 --add-host=host.docker.internal:host-gateway -f dev-sft/Dockerfile -t ascend-cann900-x86_64-huawei:sft --build-arg BASE_IMAGE=ascend-cann900-x86_64-huawei:base --network host --build-arg HTTP_PROXY=http://127.0.0.1:18080 --build-arg HTTPS_PROXY=http://127.0.0.1:18080 --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com --build-arg APT_INSECURE=1 --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com --build-arg CANN_ARCH=x86_64 --build-arg CANN_CHIP=910b --build-arg CANN_VERSION=9.0.0 --build-arg CANN_RUNFILE=Ascend-cann_9.0.0_linux-x86_64.run --build-arg CANN_OPS_RUNFILE=Ascend-cann-910b-ops_9.0.0_linux-x86_64.run --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-x86_64.run --build-arg TORCH_VERSION=2.10 --build-arg TORCH_NPU_VERSION=2.10 --build-arg TRITON_ASCEND_VERSION=3.2.1 dev-sft
-
-```
-
-All of above is A2 verison chips dockerfile.And here we supply an A3 version as example:
-```
-docker buildx build   --platform=linux/aarch64   --add-host=host.docker.internal:host-gateway --network host  -f dev-base/Dockerfile   -t ascend-cann900-aarch64-huawei:base   --build-arg BASE_IMAGE=python:3.11-bookworm   --build-arg HTTP_PROXY=http://127.0.0.1:18080   --build-arg HTTPS_PROXY=http://127.0.0.1:18080   --build-arg NO_PROXY=host.docker.internal,localhost,127.0.0.1,::1,mirrors.tools.huawei.com   --build-arg DEBIAN_MIRROR_HOST=mirrors.tools.huawei.com   --build-arg APT_DIRECT_HOSTS=mirrors.tools.huawei.com   --build-arg APT_INSECURE=1   --build-arg DOCKER_APT_BASE=https://mirrors.tools.huawei.com/docker-ce/linux/debian   --build-arg PIP_INDEX_URL=https://mirrors.tools.huawei.com/pypi/simple   --build-arg PIP_TRUSTED_HOST=mirrors.tools.huawei.com   --build-arg CANN_ARCH=aarch64   --build-arg CANN_CHIP=910b   --build-arg CANN_VERSION=9.0.0   --build-arg CANN_RUNFILE=Ascend-cann-toolkit_9.0.0_linux-aarch64.run   --build-arg CANN_OPS_RUNFILE=Ascend-cann-A3-ops_9.0.0_linux-aarch64.run   --build-arg CANN_NNAL_RUNFILE=Ascend-cann-nnal_9.0.0_linux-aarch64.run   --build-arg TORCH_VERSION=2.10   --build-arg TORCH_NPU_VERSION=2.10   --build-arg TRITON_ASCEND_VERSION=3.2.1   --load   dev-base
 ```

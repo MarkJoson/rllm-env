@@ -105,13 +105,3 @@ RUN if [ "${INSTALL_KERNELGYM}" = "1" ]; then \
             triton-ascend \
             --no-build-isolation; \
     fi
-# 自动 source Ascend 环境变量
-# 固定默认行为：始终追加
-RUN cat /etc/profile.d/ascend-cann.sh >> /root/.bashrc
-# SSH 与入口脚本
-COPY .ssh /root/.ssh
-COPY entrypoint.sh /workspace/entrypoint.sh
-RUN chmod 700 /root/.ssh || true; \
-    chmod 600 /root/.ssh/* || true; \
-    chmod +x /workspace/entrypoint.sh
-ENTRYPOINT ["/workspace/entrypoint.sh"]

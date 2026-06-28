@@ -291,6 +291,19 @@ RUN set -eux; \
     echo "insecure" > ~/.curlrc; \
     echo "check_certificate = off" > ~/.wgetrc; \
     curl -LsSfk https://astral.sh/uv/install.sh | bash
+
+RUN cat > /etc/pip.conf <<EOF
+[global]
+index-url = ${PIP_INDEX_URL}
+extra-index-url =
+    https://download.pytorch.org/whl/cpu
+    https://mirrors.huaweicloud.com/ascend/repos/pypi
+trusted-host =
+    download.pytorch.org
+    download-r2.pytorch.org
+    ${PIP_TRUSTED_HOST}
+    triton-ascend.osinfra.cn
+EOF
  
 # --- torch / torch_npu / triton-ascend (pip cache mount) ---------------------
 RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
@@ -303,11 +316,6 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
         ${pkgs} \
         -i https://download.pytorch.org/whl/cpu \
         --extra-index-url="${PIP_INDEX_URL}" \
-        --extra-index-url=https://triton-ascend.osinfra.cn/pypi/simple \
-        --trusted-host=download.pytorch.org \
-        --trusted-host=download-r2.pytorch.org \
-        --trusted-host="${PIP_TRUSTED_HOST}" \
-        --trusted-host=triton-ascend.osinfra.cn
  
 # --- MPICH -------------------------------------------------------------------
 RUN source /etc/profile.d/ascend-cann.sh || true; \
@@ -354,4 +362,14 @@ RUN source /etc/profile.d/ascend-cann.sh; \
     cd "${INSTALL_DIR}/tools/hccl_test"; \
     make MPI_HOME=/usr/local/mpich ASCEND_DIR="${INSTALL_DIR}"
 
-ENTRYPOINT ["/usr/bin/bash"]
+RUN cat /etc/profile.d/ascend-cann.sh >> /root/.bashrc
+
+COPY .ssh /root/.ssh
+COPY entrypoint.sh /workspace/entrypoint.sh
+RUN chmod 700 /root/.ssh || true; \
+    chmod 600 /root/.ssh/* || true; \
+    chmod +x /workspace/entrypoint.sh
+
+ENV http_proxy= https_proxy= no_proxy= HTTP_PROXY= HTTPS_PROXY= NO_PROXY=
+
+ENTRYPOINT ["/workspace/entrypoint.sh"]
