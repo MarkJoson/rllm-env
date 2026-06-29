@@ -1,124 +1,164 @@
 #!/bin/bash
 set -euo pipefail
 
-# ========== 1. 解析 HTTP_PROXY 环境变量 ==========
+# ========== 1. 初始化代理参数 ==========
 
 url_decode() {
     local encoded="${1//+/ }"
     printf '%b' "${encoded//%/\\x}"
 }
 
-# 兼容 HTTPS_PROXY / HTTP_PROXY / https_proxy / http_proxy 几种常见写法
 PROXY_RAW=""
 PROXY_SRC=""
-for v in HTTPS_PROXY https_proxy HTTP_PROXY http_proxy; do
-    val="${!v:-}"
-    if [ -n "$val" ]; then
-        PROXY_RAW="$val"
-        PROXY_SRC="$v"
-        break
-    fi
-done
-
-if [ -z "$PROXY_RAW" ]; then
-    echo "❌ 环境变量 HTTP_PROXY / http_proxy 均未设置，无法获取代理地址。"
-    echo "   请先 export http_proxy=http://user:pass@proxy_ip:port 后重试。"
-    exit 1
-fi
-
-# 去除协议前缀 http:// 或 https://
-PROXY_URL="${PROXY_RAW#http://}"
-PROXY_URL="${PROXY_URL#https://}"
-
-# 去除末尾斜杠
-PROXY_URL="${PROXY_URL%/}"
-
+PROXY_ENABLED=0
+PROXY_HOST=""
+PROXY_PORT=""
 PROXY_USER=""
 PROXY_PASS=""
 PROXY_AUTH=""
+PKG_PROXY_URL=""
+OPENSSL_PROXY_ARGS=()
+APT_PROXY_ARGS=()
+YUM_PROXY_ARGS=()
 
-# 判断是否包含用户名密码：user:pass@host:port
-if [[ "$PROXY_URL" == *"@"* ]]; then
-    # 使用最后一个 @ 作为认证信息和地址的分隔符
-    # 这样可以降低密码中包含 @ 的情况造成的问题，
-    # 但更推荐密码中的 @ 使用 %40 编码。
-    PROXY_AUTH="${PROXY_URL%@*}"
-    PROXY_ADDR="${PROXY_URL##*@}"
+detect_proxy_env() {
+    local v val
+    PROXY_RAW=""
+    PROXY_SRC=""
 
-    if [[ "$PROXY_AUTH" != *":"* ]]; then
-        echo "❌ ${PROXY_SRC} 中包含认证信息，但格式不是 user:pass@host:port。"
-        echo "   当前 ${PROXY_SRC}='${PROXY_RAW}'"
-        exit 1
+    # 兼容 HTTPS_PROXY / HTTP_PROXY / https_proxy / http_proxy 几种常见写法
+    for v in HTTPS_PROXY https_proxy HTTP_PROXY http_proxy; do
+        val="${!v:-}"
+        if [ -n "$val" ]; then
+            PROXY_RAW="$val"
+            PROXY_SRC="$v"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+init_proxy() {
+    local proxy_url proxy_addr
+
+    PROXY_ENABLED=0
+    PROXY_HOST=""
+    PROXY_PORT=""
+    PROXY_USER=""
+    PROXY_PASS=""
+    PROXY_AUTH=""
+    PKG_PROXY_URL=""
+    OPENSSL_PROXY_ARGS=()
+    APT_PROXY_ARGS=()
+    YUM_PROXY_ARGS=()
+
+    if ! detect_proxy_env; then
+        echo "未检测到 HTTP_PROXY/HTTPS_PROXY，将直连访问目标站点和软件源。"
+        return 0
     fi
 
-    PROXY_USER="${PROXY_AUTH%%:*}"
-    PROXY_PASS="${PROXY_AUTH#*:}"
+    PROXY_ENABLED=1
 
-    PROXY_USER="$(url_decode "$PROXY_USER")"
-    PROXY_PASS="$(url_decode "$PROXY_PASS")"
+    # 去除协议前缀 http:// 或 https://
+    proxy_url="${PROXY_RAW#http://}"
+    proxy_url="${proxy_url#https://}"
 
-    if [ -z "$PROXY_USER" ] || [ -z "$PROXY_PASS" ]; then
-        echo "❌ 无法从 ${PROXY_SRC} 中解析出代理用户名或密码。"
-        echo "   当前 ${PROXY_SRC}='${PROXY_RAW}'"
-        exit 1
-    fi
-else
-    PROXY_ADDR="$PROXY_URL"
-fi
+    # 去除末尾斜杠
+    proxy_url="${proxy_url%/}"
 
-# 去除地址末尾可能残留的路径
-PROXY_ADDR="${PROXY_ADDR%%/*}"
+    # 判断是否包含用户名密码：user:pass@host:port
+    if [[ "$proxy_url" == *"@"* ]]; then
+        # 使用最后一个 @ 作为认证信息和地址的分隔符。
+        # 这样可以降低密码中包含 @ 的情况造成的问题，
+        # 但更推荐密码中的 @ 使用 %40 编码。
+        PROXY_AUTH="${proxy_url%@*}"
+        proxy_addr="${proxy_url##*@}"
 
-# 分离主机和端口；若未显式给出端口，按协议默认 80/443
-if [[ "$PROXY_ADDR" == *:* ]]; then
-    PROXY_HOST="${PROXY_ADDR%:*}"
-    PROXY_PORT="${PROXY_ADDR##*:}"
-else
-    PROXY_HOST="$PROXY_ADDR"
-    if [[ "$PROXY_RAW" == https://* ]]; then
-        PROXY_PORT="443"
+        if [[ "$PROXY_AUTH" != *":"* ]]; then
+            echo "❌ ${PROXY_SRC} 中包含认证信息，但格式不是 user:pass@host:port。"
+            echo "   当前 ${PROXY_SRC}='${PROXY_RAW}'"
+            exit 1
+        fi
+
+        PROXY_USER="${PROXY_AUTH%%:*}"
+        PROXY_PASS="${PROXY_AUTH#*:}"
+
+        PROXY_USER="$(url_decode "$PROXY_USER")"
+        PROXY_PASS="$(url_decode "$PROXY_PASS")"
+
+        if [ -z "$PROXY_USER" ] || [ -z "$PROXY_PASS" ]; then
+            echo "❌ 无法从 ${PROXY_SRC} 中解析出代理用户名或密码。"
+            echo "   当前 ${PROXY_SRC}='${PROXY_RAW}'"
+            exit 1
+        fi
     else
-        PROXY_PORT="80"
+        proxy_addr="$proxy_url"
     fi
-    echo "⚠️ ${PROXY_SRC} 未指定端口，默认使用 ${PROXY_PORT}。"
-fi
 
-if [ -z "$PROXY_HOST" ] || [ -z "$PROXY_PORT" ]; then
-    echo "❌ 无法从 ${PROXY_SRC}='${PROXY_RAW}' 解析出主机和端口。"
-    exit 1
-fi
+    # 去除地址末尾可能残留的路径
+    proxy_addr="${proxy_addr%%/*}"
 
-# 构造 openssl s_client 代理参数
-OPENSSL_PROXY_ARGS=(-proxy "${PROXY_HOST}:${PROXY_PORT}")
+    # 分离主机和端口；若未显式给出端口，按协议默认 80/443
+    if [[ "$proxy_addr" == *:* ]]; then
+        PROXY_HOST="${proxy_addr%:*}"
+        PROXY_PORT="${proxy_addr##*:}"
+    else
+        PROXY_HOST="$proxy_addr"
+        if [[ "$PROXY_RAW" == https://* ]]; then
+            PROXY_PORT="443"
+        else
+            PROXY_PORT="80"
+        fi
+        echo "⚠️ ${PROXY_SRC} 未指定端口，默认使用 ${PROXY_PORT}。"
+    fi
 
-if [ -n "$PROXY_USER" ]; then
-    OPENSSL_PROXY_ARGS+=(-proxy_user "$PROXY_USER" -proxy_pass "pass:${PROXY_PASS}")
-fi
+    if [ -z "$PROXY_HOST" ] || [ -z "$PROXY_PORT" ]; then
+        echo "❌ 无法从 ${PROXY_SRC}='${PROXY_RAW}' 解析出主机和端口。"
+        exit 1
+    fi
 
-# 为 apt/yum/dnf 构造代理 URL（沿用传入的 http_proxy，认证信息保持原始 URL 编码）
-# 统一用 http:// 前缀：代理本身用 HTTP CONNECT，scheme 指的是到代理的连接，不影响目标站点的 https。
-if [ -n "$PROXY_AUTH" ]; then
-    PKG_PROXY_URL="http://${PROXY_AUTH}@${PROXY_HOST}:${PROXY_PORT}"
-else
-    PKG_PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
-fi
+    # 构造 openssl s_client 代理参数
+    OPENSSL_PROXY_ARGS=(-proxy "${PROXY_HOST}:${PROXY_PORT}")
+    if [ -n "$PROXY_USER" ]; then
+        OPENSSL_PROXY_ARGS+=(-proxy_user "$PROXY_USER" -proxy_pass "pass:${PROXY_PASS}")
+    fi
 
-# 打印代理信息，避免泄露密码
+    # 为 apt/yum/dnf 构造代理 URL（沿用传入的 http_proxy，认证信息保持原始 URL 编码）
+    # 统一用 http:// 前缀：代理本身用 HTTP CONNECT，scheme 指的是到代理的连接，不影响目标站点的 https。
+    if [ -n "$PROXY_AUTH" ]; then
+        PKG_PROXY_URL="http://${PROXY_AUTH}@${PROXY_HOST}:${PROXY_PORT}"
+    else
+        PKG_PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
+    fi
+
+    APT_PROXY_ARGS=(
+        -o Acquire::http::Proxy="$PKG_PROXY_URL"
+        -o Acquire::https::Proxy="$PKG_PROXY_URL"
+        -o Acquire::https::Verify-Peer=false
+    )
+    YUM_PROXY_ARGS=(
+        --setopt=proxy="$PKG_PROXY_URL"
+        --setopt=sslverify=0
+    )
+
+    # 打印代理信息，避免泄露密码
+    if [ -n "$PROXY_USER" ]; then
+        echo "${PROXY_SRC}: ${PROXY_HOST}:${PROXY_PORT}，认证用户: ${PROXY_USER}"
+    else
+        echo "${PROXY_SRC}: ${PROXY_HOST}:${PROXY_PORT}，无认证"
+    fi
+    echo "解析代理:  ${PROXY_HOST}:${PROXY_PORT}"
+}
+
 echo "=== 多代理 CA 自动安装 ==="
-
-if [ -n "$PROXY_USER" ]; then
-    echo "${PROXY_SRC}: ${PROXY_HOST}:${PROXY_PORT}，认证用户: ${PROXY_USER}"
-else
-    echo "${PROXY_SRC}: ${PROXY_HOST}:${PROXY_PORT}，无认证"
-fi
-
-echo "解析代理:  ${PROXY_HOST}:${PROXY_PORT}"
+init_proxy
 
 # ========== 1.5 自动安装缺失的必备工具 ==========
-# 通过命令行参数给 apt/yum/dnf 配置代理（沿用上面解析出的 PKG_PROXY_URL），
-# 不依赖也不修改全局配置文件。
+# 若检测到代理，则通过命令行参数给 apt/yum/dnf 配置代理（沿用上面解析出的 PKG_PROXY_URL），
+# 不依赖也不修改全局配置文件；未设置代理时直接使用系统默认网络配置。
 # 注意 bootstrap 困境：若代理是 TLS 拦截型，CA 尚未安装时 https 源会校验失败，
-# 因此安装这批工具时临时关闭包管理器的 SSL 校验（仅此一步）。
+# 因此经代理安装这批工具时临时关闭包管理器的 SSL 校验（仅此一步）。
 
 # 探测包管理器
 PKG_MGR=""
@@ -134,19 +174,14 @@ pkg_install() {
     case "$PKG_MGR" in
         apt-get)
             DEBIAN_FRONTEND=noninteractive apt-get update \
-                -o Acquire::http::Proxy="$PKG_PROXY_URL" \
-                -o Acquire::https::Proxy="$PKG_PROXY_URL" \
-                -o Acquire::https::Verify-Peer=false >/dev/null 2>&1 || true
+                "${APT_PROXY_ARGS[@]}" >/dev/null 2>&1 || true
             DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-                -o Acquire::http::Proxy="$PKG_PROXY_URL" \
-                -o Acquire::https::Proxy="$PKG_PROXY_URL" \
-                -o Acquire::https::Verify-Peer=false \
+                "${APT_PROXY_ARGS[@]}" \
                 "$@"
             ;;
         dnf|yum)
             "$PKG_MGR" install -y \
-                --setopt=proxy="$PKG_PROXY_URL" \
-                --setopt=sslverify=0 \
+                "${YUM_PROXY_ARGS[@]}" \
                 "$@"
             ;;
         *)
@@ -179,7 +214,11 @@ ensure_tool() {
 }
 
 if [ -n "$PKG_MGR" ]; then
-    echo "包管理器: ${PKG_MGR}，代理: ${PROXY_HOST}:${PROXY_PORT}"
+    if [ "$PROXY_ENABLED" -eq 1 ]; then
+        echo "包管理器: ${PKG_MGR}，代理: ${PROXY_HOST}:${PROXY_PORT}"
+    else
+        echo "包管理器: ${PKG_MGR}，未设置代理"
+    fi
 fi
 
 # openssl 命令行：CA 提取的核心依赖（部分精简镜像只有 openssl-libs）
@@ -209,19 +248,21 @@ if ! command -v openssl >/dev/null 2>&1; then
     exit 1
 fi
 
-OPENSSL_SCLIENT_HELP="$(openssl s_client -help 2>&1 || true)"
+if [ "$PROXY_ENABLED" -eq 1 ]; then
+    OPENSSL_SCLIENT_HELP="$(openssl s_client -help 2>&1 || true)"
 
-if ! grep -qE '(^|[[:space:]])-proxy([[:space:]]|$)' <<<"$OPENSSL_SCLIENT_HELP"; then
-    echo "❌ 当前 openssl 的 s_client 不支持 -proxy 选项（需 OpenSSL ≥ 1.1.0）。"
-    echo "   CentOS 7 自带 OpenSSL 1.0.2，请先升级 openssl 后重试。"
-    echo "   当前版本: $(openssl version 2>/dev/null || echo unknown)"
-    exit 1
-fi
+    if ! grep -qE '(^|[[:space:]])-proxy([[:space:]]|$)' <<<"$OPENSSL_SCLIENT_HELP"; then
+        echo "❌ 当前 openssl 的 s_client 不支持 -proxy 选项（需 OpenSSL ≥ 1.1.0）。"
+        echo "   CentOS 7 自带 OpenSSL 1.0.2，请先升级 openssl 后重试。"
+        echo "   当前版本: $(openssl version 2>/dev/null || echo unknown)"
+        exit 1
+    fi
 
-if [ -n "$PROXY_USER" ] && ! grep -q -- '-proxy_user' <<<"$OPENSSL_SCLIENT_HELP"; then
-    echo "⚠️ 当前 openssl 不支持 -proxy_user/-proxy_pass（需 OpenSSL ≥ 3.0），将以无认证方式连接代理。"
-    echo "   若代理要求认证可能导致提取失败。当前版本: $(openssl version 2>/dev/null || echo unknown)"
-    OPENSSL_PROXY_ARGS=(-proxy "${PROXY_HOST}:${PROXY_PORT}")
+    if [ -n "$PROXY_USER" ] && ! grep -q -- '-proxy_user' <<<"$OPENSSL_SCLIENT_HELP"; then
+        echo "⚠️ 当前 openssl 不支持 -proxy_user/-proxy_pass（需 OpenSSL ≥ 3.0），将以无认证方式连接代理。"
+        echo "   若代理要求认证可能导致提取失败。当前版本: $(openssl version 2>/dev/null || echo unknown)"
+        OPENSSL_PROXY_ARGS=(-proxy "${PROXY_HOST}:${PROXY_PORT}")
+    fi
 fi
 
 # ========== 2. 获取域名列表 ==========
