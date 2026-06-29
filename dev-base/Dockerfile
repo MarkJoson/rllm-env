@@ -296,13 +296,17 @@ RUN cat > /etc/pip.conf <<EOF
 [global]
 index-url = ${PIP_INDEX_URL}
 extra-index-url =
+    https://pypi.tuna.tsinghua.edu.cn/simple
+    https://pypi.org/simple
     https://download.pytorch.org/whl/cpu
     https://mirrors.huaweicloud.com/ascend/repos/pypi
 trusted-host =
+    pypi.tuna.tsinghua.edu.cn
+    pypi.org
     download.pytorch.org
     download-r2.pytorch.org
-    ${PIP_TRUSTED_HOST}
     triton-ascend.osinfra.cn
+    ${PIP_TRUSTED_HOST}
 EOF
  
 # --- torch / torch_npu / triton-ascend (pip cache mount) ---------------------
@@ -315,7 +319,7 @@ RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     python -m pip install \
         ${pkgs} \
         -i https://download.pytorch.org/whl/cpu \
-        --extra-index-url="${PIP_INDEX_URL}" \
+        --extra-index-url="${PIP_INDEX_URL}"
  
 # --- MPICH -------------------------------------------------------------------
 RUN source /etc/profile.d/ascend-cann.sh || true; \
@@ -337,9 +341,38 @@ RUN <<'EOF'
 set -eux
 grep -q "force_color_prompt=yes" /root/.bashrc || echo 'force_color_prompt=yes' >> /root/.bashrc
 cat >> /root/.bashrc <<'BASHRC'
- 
+. "$HOME/.local/bin/env"
+
+shopt -s checkwinsize
+shopt -s histappend
+
+HISTCONTROL=ignoreboth
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+eval "$(dircolors -b)"
+alias ls='ls --color=auto'
+alias ll='ls --color=auto -alF'
+alias la='ls --color=auto -A'
+alias l='ls --color=auto -CF'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+force_color_prompt=yes
 # Force colored prompt and set host color to red
 export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\[\033[01;31m\]${HOSTNAME:0:16}\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+if [ -f /usr/local/Ascend/cann/set_env.sh ]; then
+  . /usr/local/Ascend/cann/set_env.sh
+elif [ -f /usr/local/Ascend/ascend-toolkit/set_env.sh ]; then
+  . /usr/local/Ascend/ascend-toolkit/set_env.sh
+elif [ -f /usr/local/Ascend/ascend-toolkit/latest/set_env.sh ]; then
+  . /usr/local/Ascend/ascend-toolkit/latest/set_env.sh
+fi
+
+if [ -f /usr/local/Ascend/nnal/atb/set_env.sh ]; then
+  . /usr/local/Ascend/nnal/atb/set_env.sh
+fi
 BASHRC
 EOF
  
@@ -361,8 +394,6 @@ RUN source /etc/profile.d/ascend-cann.sh; \
     INSTALL_DIR=/usr/local/Ascend/ascend-toolkit/latest; \
     cd "${INSTALL_DIR}/tools/hccl_test"; \
     make MPI_HOME=/usr/local/mpich ASCEND_DIR="${INSTALL_DIR}"
-
-RUN cat /etc/profile.d/ascend-cann.sh >> /root/.bashrc
 
 COPY .ssh /root/.ssh
 COPY entrypoint.sh /workspace/entrypoint.sh
