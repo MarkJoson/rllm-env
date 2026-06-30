@@ -52,8 +52,7 @@ RUN pip install --no-cache-dir \
         mbridge==0.15.1 \
         safetensors==0.7.0 \
         tokenizers==0.22.2 \
-        transformers==5.12.1 \
-        huggingface_hub==1.21.0 \
+        transformers==5.5.4 \
         sentencepiece==0.2.1 \
         peft==0.19.1 \
         timm==1.0.27 \
@@ -74,11 +73,8 @@ RUN pip install --no-cache-dir \
         wandb==0.27.2 \
         memray==1.19.3 \
         tabulate==0.10.0 \
-        ring-flash-attn==0.1.8
-# NOTE: torch_memory_saver 在 NPU 不可用(CUDA-only, NPU 上 import 报 ModuleNotFoundError)。
-#       NPU rollout 阶段的显存 offload 改用 vime 的 scripts/npu_mem_offload/ storage-resize hook
-#       (verl 式 storage().resize_(0)+empty_cache, 修 NPUWeightOffloader 假卸载;
-#        VIME_OFFLOAD_PARAM_BUFFER=0 仅卸 grad / =1 全卸 param+grad)。
+        ring-flash-attn==0.1.8 \
+        torch_memory_saver==0.0.9.post1
 
 # Utilities
 RUN pip install --no-cache-dir \
